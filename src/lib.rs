@@ -1,9 +1,10 @@
 mod future;
 pub mod selector;
-pub mod scheduler;
+pub mod task;
 pub mod store;
 pub mod dispatch;
 pub mod reducer;
+mod scheduler;
 
 
 #[cfg(test)]

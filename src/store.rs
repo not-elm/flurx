@@ -19,7 +19,7 @@ impl<State> Store<State> {
 impl<State> Store<Option<State>> {
     pub const fn uninit() -> Store<Option<State>> {
         Store {
-            state: None
+            state: UnsafeCell::new(None)
         }
     }
 }

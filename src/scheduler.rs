@@ -1,61 +1,110 @@
+use std::borrow::Cow;
 use std::future::Future;
-use std::process::Output;
+use std::marker::PhantomData;
+use std::mem::MaybeUninit;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use crate::future::StateFuture;
-use crate::selector::{StateSelector, Until};
+use crate::task::Task;
 
-pub struct Scheduler<State> {
-    state: Option<State>,
+type PinFuture<'a> = Pin<Box<dyn Future<Output=()> + 'a>>;
+
+
+pub struct Scheduler<'a, State>{
+    state: Cow<'a, Option<State>>,
+    futures: Vec<PinFuture<'a>>,
+    _maker: PhantomData<&'a State>,
 }
 
 
 impl<'a, State> Scheduler<'a, State>
-    where State: 'static
 {
-    pub fn new(state: &'a State) -> Scheduler<'a, State> {
-        Self {
-            state
-        }
+    pub fn schedule<F>(&mut self, f: impl FnOnce(Task<State>) -> F)
+        where F: Future<Output=()> + 'a,
+    {
+        let task = Task::<'a, State>::new(&self.state);
+        let future = f(task);
+        self.futures.push(Box::pin(future));
     }
 
-    pub fn add<Output, Selector>(&self, selector: Selector) -> impl Future<Output=Selector::Output> + 'a
-        where Selector: StateSelector<State, Output=Output> + 'a
-    {
-        StateFuture::new(self.state, selector)
+    pub async fn run(&mut self, state: State) {
+        self.state.replace(state);
+        let len = self.futures.len();
+        SchedulerHandle {
+            futures: &mut self.futures,
+            polled: Vec::with_capacity(len),
+        }
+            .await
     }
-    
-    
-    pub fn until(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future<Output = ()> + 'a{
-       self.add(Until::new(f))
+}
+
+
+impl<'a , State> Default for Scheduler<'a,  State> {
+    fn default() -> Self {
+        Self {
+            state: Cow::Owned(None),
+            futures: Vec::new(),
+            _maker: PhantomData,
+        }
+    }
+}
+
+struct SchedulerHandle<'a, 'b> {
+    futures: &'b mut Vec<PinFuture<'a>>,
+    polled: Vec<PinFuture<'a>>,
+}
+
+
+impl<'a, 'b> Future for SchedulerHandle<'a, 'b>
+
+{
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Some(mut future) = self.futures.pop() {
+            if future.as_mut().poll(cx).is_pending() {
+                self.polled.push(future);
+            }
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        } else {
+            while let Some(f) = self.polled.pop() {
+                self.futures.push(f);
+            }
+            Poll::Ready(())
+        }
     }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use std::cell::UnsafeCell;
-
-    use futures_lite::pin;
+    use std::sync::{Arc, Mutex};
 
     use crate::scheduler::Scheduler;
-    use crate::tests::poll_once_block;
 
-    #[test]
-    fn once_wait() {
-        let mut state = UnsafeCell::new(1);
-        let scheduler = Scheduler::new(unsafe {
-            &(*state.get())
+    #[tokio::test]
+    async fn one_until() {
+        let mut scheduler = Scheduler::<i32>::default();
+        let result = Arc::new(Mutex::new(false));
+        let result2 = result.clone();
+        scheduler.schedule(|task| async move {
+            task.until(|state: &i32| {
+                println!("state = {state}");
+                *state < 2
+            }).await;
+            *result2.lock().unwrap() = true;
         });
-        let f = scheduler.add(|state: &i32| {
-            if *state == 2 {
-                Some(())
-            } else {
-                None
-            }
-        });
-        pin!(f);
-        assert!(poll_once_block(&mut f).is_none());
-        *state.get_mut() = 2;
-        assert!(poll_once_block(&mut f).is_some());
+
+        scheduler.run(1).await;
+        assert!(!*result.lock().unwrap());
+
+        scheduler.run(2).await;
+        assert!(!*result.lock().unwrap());
+
+       scheduler.run(2).await;
+        assert!(*result.lock().unwrap());
     }
 }
+
+

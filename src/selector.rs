@@ -1,7 +1,7 @@
 mod r#while;
 mod until;
 
-pub use r#while::While;
+// pub use r#while::While;
 pub use until::Until;
 
 pub trait StateSelector<State> {
@@ -12,7 +12,7 @@ pub trait StateSelector<State> {
 
 
 impl<State, Output, F> StateSelector<State> for F
-    where F: Fn(&State) -> Option<Output>
+    where F: Fn(&State) -> Option<Output> + Unpin
 {
     type Output = Output;
 
