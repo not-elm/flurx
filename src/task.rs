@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use crate::future::StateFuture;
 use crate::selector::{StateSelector, Until, While};
 
@@ -18,19 +16,19 @@ impl<'a, State> Task<'a, State> {
     }
 
 
-    pub fn add<Output, Selector>(&self, selector: Selector) -> StateFuture<'a, State, Selector>
+    pub async fn add<Output, Selector>(&self, selector: Selector) -> Output
         where Selector: StateSelector<State, Output=Output>
     {
-        StateFuture::new(self.state, selector)
+        StateFuture::new(self.state, selector).await
     }
 
 
-    pub fn wait_until(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future + 'a {
-        self.add(Until::create(f))
+    pub async fn wait_until(&self, f: impl Fn(&State) -> bool + 'static) {
+        self.add(Until::create(f)).await
     }
 
-    pub fn wait_while(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future + 'a {
-        self.add(While::create(f))
+    pub async fn wait_while(&self, f: impl Fn(&State) -> bool + 'static) {
+        self.add(While::create(f)).await
     }
 }
 
