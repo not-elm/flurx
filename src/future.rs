@@ -53,7 +53,7 @@ mod tests {
     fn count_up() {
         let mut state = UnsafeCell::new(0);
         let mut future = StateFuture::new(unsafe {
-            & *state.get()
+            &*state.get()
         }, |state: &i32| {
             if *state == 1 {
                 Some(())

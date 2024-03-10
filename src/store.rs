@@ -15,9 +15,6 @@ impl<State> Store<State> {
         self.state.get_mut()
     }
 
-    pub(crate) unsafe fn unsafe_ref<'a>(&self) -> &'a State {
-        &*self.state.get()
-    }
 }
 
 

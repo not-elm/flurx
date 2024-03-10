@@ -25,11 +25,11 @@ impl<'a, State> Task<'a, State> {
     }
 
 
-    pub fn wait_until(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future<Output=()> + 'a {
+    pub fn wait_until(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future + 'a {
         self.add(Until::create(f))
     }
 
-    pub fn wait_while(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future<Output=()> + 'a {
+    pub fn wait_while(&self, f: impl Fn(&State) -> bool + 'static) -> impl Future + 'a {
         self.add(While::create(f))
     }
 }

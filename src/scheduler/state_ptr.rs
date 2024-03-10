@@ -1,7 +1,11 @@
 use std::marker::PhantomData;
+use pin_project::pin_project;
 
+
+#[pin_project]
+#[repr(transparent)]
 #[derive(Default)]
-pub(crate) struct StatePtr<'a, State>([State; 1], PhantomData<&'a State>);
+pub(crate) struct StatePtr<'a, State>(#[pin][State; 1], PhantomData<&'a State>);
 
 
 impl<'a, State> StatePtr<'a, State> {
