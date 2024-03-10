@@ -9,7 +9,7 @@ impl<F, State> While<F, State>
         F: Fn(&State) -> bool,
 
 {
-    pub fn new(f: F) -> impl StateSelector<State, Output=()> {
+    pub fn create(f: F) -> impl StateSelector<State, Output=()> {
         Self(f, PhantomData)
     }
 }

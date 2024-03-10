@@ -1,5 +1,10 @@
 use std::cell::UnsafeCell;
 
+pub trait LoadStore<State> {
+    fn load(&self) -> &State;
+}
+
+
 #[derive(Default)]
 pub struct Store<State> {
     state: UnsafeCell<State>,

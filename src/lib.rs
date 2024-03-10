@@ -4,7 +4,7 @@ pub mod task;
 pub mod store;
 pub mod dispatch;
 pub mod reducer;
-mod scheduler;
+pub mod scheduler;
 
 
 #[cfg(test)]

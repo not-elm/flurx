@@ -31,10 +31,7 @@ impl<'a, State, Selector> Future for StateFuture<'a, State, Selector>
     type Output = Selector::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Some(output) = self
-                .state
-                .as_ref()
-                .and_then(|state|self.selector.select(state)) {
+        if let Some(output) = self.selector.select(self.state) {
             Poll::Ready(output)
         } else {
             cx.waker().wake_by_ref();
@@ -52,21 +49,21 @@ mod tests {
 
     use crate::future::StateFuture;
 
-    // #[test]
-    // fn count() {
-    //     let mut state = UnsafeCell::new(0);
-    //     let mut future = StateFuture::new(unsafe {
-    //         & *state.get()
-    //     }, |state: &i32| {
-    //         if *state == 1 {
-    //             Some(())
-    //         } else {
-    //             None
-    //         }
-    //     });
-    //     assert!(block_on(poll_once(&mut future)).is_none());
-    //     *state.get_mut() = 1;
-    //     assert!(block_on(poll_once(&mut future)).is_some());
-    // }
+    #[test]
+    fn count_up() {
+        let mut state = UnsafeCell::new(0);
+        let mut future = StateFuture::new(unsafe {
+            & *state.get()
+        }, |state: &i32| {
+            if *state == 1 {
+                Some(())
+            } else {
+                None
+            }
+        });
+        assert!(block_on(poll_once(&mut future)).is_none());
+        *state.get_mut() = 1;
+        assert!(block_on(poll_once(&mut future)).is_some());
+    }
 }
 
