@@ -3,7 +3,7 @@ use std::pin::Pin;
 
 use crate::scheduler::handle::SchedulerHandle;
 use crate::scheduler::state_ptr::StatePtr;
-use crate::task::Task;
+use crate::task::TaskCreator;
 
 mod handle;
 mod state_ptr;
@@ -23,10 +23,18 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
         'a: 'b,
         State: 'a + 'b
 {
-    pub fn schedule<F>(&mut self, f: impl FnOnce(Task<'a, State>) -> F)
+    pub const fn new(state: State) -> Scheduler<'a, 'b, State>{
+        Self{
+            state: StatePtr::new(state),
+            futures: Vec::new()
+        }
+    }
+
+
+    pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
         where F: Future<Output=()> + 'b,
     {
-        self.futures.push(Box::pin(f(Task {
+        self.futures.push(Box::pin(f(TaskCreator {
             state: self.state.state_ref()
         })));
     }
@@ -58,7 +66,7 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.run(wait::until(|state: &i32| {
+            task.task(wait::until(|state: &i32| {
                 *state < 2
             })).await;
             *r.lock().unwrap() = true;
@@ -78,13 +86,15 @@ mod tests {
         let result = Arc::new(Mutex::new(false));
         let r = result.clone();
 
-        scheduler.schedule(|task| async move {
-            task.run(wait::while_(|state: &i32| {
+        scheduler.schedule(|tc| async move {
+            tc.task(wait::while_(|state: &i32| {
                 *state == 2
             })).await;
-            task.run(wait::until(|state: &i32| {
+            
+            tc.task(wait::until(|state: &i32| {
                 *state < 3
             })).await;
+
             *r.lock().unwrap() = true;
         });
 

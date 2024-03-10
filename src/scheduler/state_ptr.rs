@@ -1,14 +1,15 @@
 use std::marker::PhantomData;
-use pin_project::pin_project;
 
-
-#[pin_project]
 #[repr(transparent)]
 #[derive(Default)]
-pub(crate) struct StatePtr<'a, State>(#[pin][State; 1], PhantomData<&'a State>);
+pub(crate) struct StatePtr<'a, State>([State; 1], PhantomData<&'a State>);
 
 
 impl<'a, State> StatePtr<'a, State> {
+    pub const fn new(state: State) -> StatePtr<'a, State> {
+        StatePtr([state], PhantomData)
+    }
+
     pub fn state_ref(&self) -> &'a State {
         unsafe { &*self.0.as_ptr() }
     }

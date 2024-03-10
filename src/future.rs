@@ -2,14 +2,10 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use pin_project::pin_project;
-
 use crate::selector::Selector;
 use crate::task::StateRef;
 
-#[pin_project]
 pub struct StateFuture<'a, State, Selector> {
-    #[pin]
     pub(crate) selector: Selector,
     pub(crate) state: StateRef<'a, State>,
 }

@@ -4,24 +4,16 @@ use crate::selector::Selector;
 
 pub fn while_<F, State>(f: F) -> impl Selector<State>
     where
-        F: Fn(&State) -> bool + Clone,
+        F: Fn(&State) -> bool,
 {
     While(f, PhantomData)
 }
 
 struct While<F, State>(F, PhantomData<State>);
 
-impl<F, State> Clone for While<F, State>
-    where F: Clone
-{
-    fn clone(&self) -> Self {
-        Self(self.0.clone(), PhantomData)
-    }
-}
-
 impl<F, State> Selector<State> for While<F, State>
     where
-        F: Fn(&State) -> bool + Clone
+        F: Fn(&State) -> bool
 {
     type Output = ();
 
@@ -48,7 +40,7 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.run(wait::while_(|state: &i32| {
+            task.task(wait::while_(|state: &i32| {
                 *state == 2
             })).await;
             *r.lock().unwrap() = true;

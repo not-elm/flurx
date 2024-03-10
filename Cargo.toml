@@ -8,13 +8,16 @@ name = "counter"
 path = "examples/store/counter.rs"
 
 [[example]]
-name = "drop_handle"
-path = "examples/cancel/drop_handle.rs"
+name = "time"
+path = "examples/selector/time.rs"
 
+[[example]]
+name = "until"
+path = "examples/selector/delay.rs"
 
 
 [dependencies]
-pin-project = "1.1.5"
+
 
 [dev-dependencies]
 futures-lite = "2.2.0"

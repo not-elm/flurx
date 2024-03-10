@@ -3,13 +3,13 @@ use crate::selector::Selector;
 
 pub(crate) type StateRef<'a, State> = &'a State;
 
-pub struct Task<'a, State> {
+pub struct TaskCreator<'a, State> {
     pub(crate) state: StateRef<'a, State>,
 }
 
 
-impl<'a, State> Task<'a, State> {
-    pub async fn run<Output, Sel>(&self, selector: Sel) -> Output
+impl<'a, State> TaskCreator<'a, State> {
+    pub async fn task<Output, Sel>(&self, selector: Sel) -> Output
         where Sel: Selector<State, Output=Output>
     {
         StateFuture {
@@ -17,12 +17,6 @@ impl<'a, State> Task<'a, State> {
             selector,
         }
             .await
-    }
-
-    pub async fn once<Output>(&self, f: impl Fn(&State) -> Output + Clone + Unpin) -> Output {
-        self.run(move |state: &State| {
-            Some(f(state))
-        }).await
     }
 }
 
@@ -33,16 +27,16 @@ mod tests {
 
     use futures_lite::pin;
 
-    use crate::task::Task;
+    use crate::task::TaskCreator;
     use crate::tests::poll_once_block;
 
     #[test]
     fn once_wait() {
         let mut state = UnsafeCell::new(0);
-        let task = Task {
+        let task = TaskCreator {
             state: unsafe { &*state.get() }
         };
-        let f = task.run(|state: &i32| {
+        let f = task.task(|state: &i32| {
             if *state == 1 {
                 Some(())
             } else {

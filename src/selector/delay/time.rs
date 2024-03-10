@@ -17,16 +17,6 @@ struct Time<State> {
     _m: PhantomData<State>,
 }
 
-impl<State> Clone for Time<State> {
-    fn clone(&self) -> Self {
-        Self {
-            start: self.start,
-            duration: self.duration,
-            _m: PhantomData,
-        }
-    }
-}
-
 
 impl<State> Selector<State> for Time<State>
 {
@@ -56,13 +46,13 @@ mod tests {
         let mut scheduler = Scheduler::<()>::default();
         let (tx, rx) = result_event();
         scheduler.schedule(|task| async move {
-            task.run(delay::time(Duration::from_millis(300))).await;
+            task.task(delay::time(Duration::from_millis(300))).await;
             tx.set(true);
         });
         scheduler.run(()).await;
         tokio::time::sleep(Duration::from_millis(300)).await;
         scheduler.run(()).await;
-        
+
         assert!(rx.get());
     }
 }

@@ -4,25 +4,16 @@ use crate::selector::Selector;
 
 pub fn until<F, State>(f: F) -> impl Selector<State>
     where
-        F: Fn(&State) -> bool + Clone,
+        F: Fn(&State) -> bool,
 {
     Until(f, PhantomData)
 }
 
 struct Until<F, State>(F, PhantomData<State>);
 
-impl<F, State> Clone for Until<F, State>
-    where F: Clone
-{
-    fn clone(&self) -> Self {
-        Self(self.0.clone(), PhantomData)
-    }
-}
-
-
 impl<F, State> Selector<State> for Until<F, State>
     where
-        F: Fn(&State) -> bool + Clone
+        F: Fn(&State) -> bool
 {
     type Output = ();
 
@@ -47,7 +38,7 @@ mod tests {
         let mut scheduler = Scheduler::<&'static str>::default();
         let (tx, rx) = result_event();
         scheduler.schedule(|task| async move {
-            task.run(wait::until(|state: &&'static str| {
+            task.task(wait::until(|state: &&'static str| {
                 *state == "hello"
             })).await;
             tx.set(true);

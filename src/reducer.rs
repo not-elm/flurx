@@ -1,17 +1,14 @@
 use std::future::Future;
 use std::mem;
 
-use pin_project::pin_project;
-
 use crate::dispatch::Dispatch;
 use crate::scheduler::Scheduler;
 use crate::store::Store;
-use crate::task::Task;
+use crate::task::TaskCreator;
 
-#[pin_project]
+
 pub struct Reducer<'a, 'b, State> {
     store: &'a mut Store<State>,
-
     scheduler: Scheduler<'a, 'b, State>,
 }
 
@@ -28,7 +25,7 @@ impl<'a, 'b, State> Reducer<'a, 'b, State>
         }
     }
 
-    pub fn schedule<F>(&mut self, f: impl FnOnce(Task<'a, State>) -> F)
+    pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
         where F: Future<Output=()> + 'b
     {
         self.scheduler.schedule(f)
@@ -37,8 +34,8 @@ impl<'a, 'b, State> Reducer<'a, 'b, State>
     pub async fn dispatch(&mut self, dispatch: impl Dispatch<State>) {
         let state = mem::take(self.store.ref_mut());
 
-        *self.store.ref_mut() = dispatch.dispatch(&state);
-        self.scheduler.run(dispatch.dispatch(&state)).await;
+        *self.store.ref_mut() = dispatch.dispatch(state);
+        self.scheduler.run(self.store.read()).await;
     }
 }
 
@@ -58,18 +55,18 @@ mod tests {
 
         let mut reducer = Reducer::<i32>::new(&mut store);
         reducer.schedule(|task| async move {
-            task.run(wait::while_(|state| {
+            task.task(wait::while_(|state| {
                 *state == 2
             }))
                 .await;
             r1.set(true);
         });
 
-        reducer.dispatch(|state: &i32| {
-            *state + 1
+        reducer.dispatch(|state| {
+            state + 1
         }).await;
-        reducer.dispatch(|state: &i32| {
-            *state + 1
+        reducer.dispatch(|state| {
+            state + 1
         }).await;
 
         assert!(r2.get());

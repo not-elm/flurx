@@ -1,4 +1,5 @@
 use std::cell::UnsafeCell;
+use std::ptr;
 
 pub trait LoadStore<State> {
     fn load(&self) -> &State;
@@ -11,10 +12,14 @@ pub struct Store<State> {
 }
 
 impl<State> Store<State> {
+    pub(crate) fn read(&self) -> State {
+        unsafe { ptr::read(self.state.get()) }
+    }
+    
+
     pub(crate) fn ref_mut(&mut self) -> &mut State {
         self.state.get_mut()
     }
-
 }
 
 

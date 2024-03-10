@@ -37,10 +37,10 @@ mod tests {
         let mut scheduler = Scheduler::<ResultEvent<usize>>::default();
         let (tx, rx) = result_event::<usize>();
         scheduler.schedule(|task| async move {
-            let t1 = task.run(repeat::forever(|state: &ResultEvent<usize>| {
+            let t1 = task.task(repeat::forever(|state: &ResultEvent<usize>| {
                 state.set(state.get() + 1);
             }));
-            let t2 = task.run(repeat::count(1, |_| {}));
+            let t2 = task.task(repeat::count(1, |_| {}));
             tokio::select! {
                 _ = t1 => {},
                 _ = t2 => {}
