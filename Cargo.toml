@@ -7,6 +7,12 @@ edition = "2021"
 name = "counter"
 path = "examples/store/counter.rs"
 
+[[example]]
+name = "drop_handle"
+path = "examples/cancel/drop_handle.rs"
+
+
+
 [dependencies]
 pin-project = "1.1.5"
 

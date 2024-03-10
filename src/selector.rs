@@ -1,6 +1,7 @@
 pub mod once;
 pub mod repeat;
 pub mod wait;
+pub mod delay;
 
 pub trait Selector<State>{
     type Output;
