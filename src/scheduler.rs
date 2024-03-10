@@ -26,9 +26,9 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
     pub fn schedule<F>(&mut self, f: impl FnOnce(Task<'a, State>) -> F)
         where F: Future<Output=()> + 'b,
     {
-        let task = Task::<'a, State>::new(self.state.state_ref());
-        let future = f(task);
-        self.futures.push(Box::pin(future));
+        self.futures.push(Box::pin(f(Task {
+            state: self.state.state_ref()
+        })));
     }
 
     pub async fn run(&mut self, state: State) {
@@ -49,6 +49,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use crate::scheduler::Scheduler;
+    use crate::selector::wait;
 
     #[tokio::test]
     async fn one_until() {
@@ -57,9 +58,9 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.wait_until(|state: &i32| {
+            task.run(wait::until(|state: &i32| {
                 *state < 2
-            }).await;
+            })).await;
             *r.lock().unwrap() = true;
         });
 
@@ -70,26 +71,6 @@ mod tests {
         assert!(*result.lock().unwrap());
     }
 
-
-    #[tokio::test]
-    async fn one_while() {
-        let mut scheduler = Scheduler::<i32>::default();
-        let result = Arc::new(Mutex::new(false));
-        let r = result.clone();
-
-        scheduler.schedule(|task| async move {
-            task.wait_while(|state: &i32| {
-                *state == 2
-            }).await;
-            *r.lock().unwrap() = true;
-        });
-
-        scheduler.run(1).await;
-        assert!(!*result.lock().unwrap());
-
-        scheduler.run(2).await;
-        assert!(*result.lock().unwrap());
-    }
 
     #[tokio::test]
     async fn while_then_until() {
@@ -98,12 +79,12 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.wait_while(|state: &i32| {
+            task.run(wait::while_(|state: &i32| {
                 *state == 2
-            }).await;
-            task.wait_until(|state: &i32| {
+            })).await;
+            task.run(wait::until(|state: &i32| {
                 *state < 3
-            }).await;
+            })).await;
             *r.lock().unwrap() = true;
         });
 

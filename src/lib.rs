@@ -15,7 +15,8 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use futures_lite::future::{block_on, poll_once};
-
+    
+    #[derive(Clone, Default)]
     pub struct ResultEvent<T>(Arc<Mutex<T>>);
 
     impl<T> ResultEvent<T> where T: Clone {

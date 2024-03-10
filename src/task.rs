@@ -1,5 +1,5 @@
 use crate::future::StateFuture;
-use crate::selector::{StateSelector, Until, While};
+use crate::selector::Selector;
 
 pub(crate) type StateRef<'a, State> = &'a State;
 
@@ -9,31 +9,20 @@ pub struct Task<'a, State> {
 
 
 impl<'a, State> Task<'a, State> {
-    pub(crate) fn new(state: StateRef<'a, State>) -> Task<'a, State> {
-        Self {
-            state
-        }
-    }
-
-
-    pub async fn add<Output, Selector>(&self, selector: Selector) -> Output
-        where Selector: StateSelector<State, Output=Output>
+    pub async fn run<Output, Sel>(&self, selector: Sel) -> Output
+        where Sel: Selector<State, Output=Output>
     {
-        StateFuture::new(self.state, selector).await
+        StateFuture {
+            state: self.state,
+            selector,
+        }
+            .await
     }
 
-    pub async fn once<Output>(&self, f: impl FnOnce(&State) -> Output + Clone + Unpin) -> Output{
-        self.add(move |state: &State| {
+    pub async fn once<Output>(&self, f: impl Fn(&State) -> Output + Clone + Unpin) -> Output {
+        self.run(move |state: &State| {
             Some(f(state))
         }).await
-    }
-
-    pub async fn wait_until(&self, f: impl FnOnce(&State) -> bool + Clone) {
-        self.add(Until::create(f)).await
-    }
-
-    pub async fn wait_while(&self, f: impl FnOnce(&State) -> bool + Clone) {
-        self.add(While::create(f)).await
     }
 }
 
@@ -50,10 +39,10 @@ mod tests {
     #[test]
     fn once_wait() {
         let mut state = UnsafeCell::new(0);
-        let task = Task::new(unsafe {
-            &*state.get()
-        });
-        let f = task.add(|state: &i32| {
+        let task = Task {
+            state: unsafe { &*state.get() }
+        };
+        let f = task.run(|state: &i32| {
             if *state == 1 {
                 Some(())
             } else {

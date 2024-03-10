@@ -46,6 +46,7 @@ impl<'a, 'b, State> Reducer<'a, 'b, State>
 #[cfg(test)]
 mod tests {
     use crate::reducer::Reducer;
+    use crate::selector::wait;
     use crate::store::Store;
     use crate::tests::result_event;
 
@@ -57,9 +58,9 @@ mod tests {
 
         let mut reducer = Reducer::<i32>::new(&mut store);
         reducer.schedule(|task| async move {
-            task.wait_while(|state| {
+            task.run(wait::while_(|state| {
                 *state == 2
-            })
+            }))
                 .await;
             r1.set(true);
         });
