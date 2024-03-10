@@ -31,7 +31,7 @@ impl<'a, State, Selector> Future for StateFuture<'a, State, Selector>
     type Output = Selector::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Some(output) = self.selector.select(self.state) {
+        if let Some(output) = self.selector.clone().select(self.state) {
             Poll::Ready(output)
         } else {
             cx.waker().wake_by_ref();

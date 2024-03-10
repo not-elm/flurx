@@ -4,9 +4,18 @@ use crate::selector::StateSelector;
 
 pub struct While<F, State>(F, PhantomData<State>);
 
+impl<F, State> Clone for While<F, State>
+    where F: Clone
+{
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), PhantomData)
+    }
+}
+
+
 impl<F, State> While<F, State>
     where
-        F: Fn(&State) -> bool,
+        F: FnOnce(&State) -> bool + Clone,
 
 {
     pub fn create(f: F) -> impl StateSelector<State, Output=()> {
@@ -16,11 +25,11 @@ impl<F, State> While<F, State>
 
 impl<F, State> StateSelector<State> for While<F, State>
     where
-        F: Fn(&State) -> bool 
+        F: FnOnce(&State) -> bool + Clone
 {
     type Output = ();
 
-    fn select(&self, state: &State) -> Option<Self::Output> {
+    fn select(self, state: &State) -> Option<Self::Output> {
         if self.0(state) {
             Some(())
         } else {

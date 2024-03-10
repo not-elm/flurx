@@ -2,11 +2,22 @@ use std::marker::PhantomData;
 
 use crate::selector::StateSelector;
 
+
+
 pub struct Until<F, State>(F, PhantomData<State>);
+
+
+impl<F, State> Clone for Until<F, State>
+    where F: Clone
+{
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), PhantomData)
+    }
+}
 
 impl<F, State> Until<F, State>
     where
-        F: Fn(&State) -> bool,
+        F: FnOnce(&State) -> bool + Clone,
 
 {
     pub fn create(f: F) -> impl StateSelector<State, Output=()> {
@@ -16,11 +27,11 @@ impl<F, State> Until<F, State>
 
 impl<F, State> StateSelector<State> for Until<F, State>
     where
-        F: Fn(&State) -> bool
+        F: FnOnce(&State) -> bool + Clone
 {
     type Output = ();
 
-    fn select(&self, state: &State) -> Option<Self::Output> {
+    fn select(self, state: &State) -> Option<Self::Output> {
         if self.0(state) {
             None
         } else {

@@ -22,12 +22,17 @@ impl<'a, State> Task<'a, State> {
         StateFuture::new(self.state, selector).await
     }
 
+    pub async fn once<Output>(&self, f: impl FnOnce(&State) -> Output + Clone + Unpin) -> Output{
+        self.add(move |state: &State| {
+            Some(f(state))
+        }).await
+    }
 
-    pub async fn wait_until(&self, f: impl Fn(&State) -> bool + 'static) {
+    pub async fn wait_until(&self, f: impl FnOnce(&State) -> bool + Clone) {
         self.add(Until::create(f)).await
     }
 
-    pub async fn wait_while(&self, f: impl Fn(&State) -> bool + 'static) {
+    pub async fn wait_while(&self, f: impl FnOnce(&State) -> bool + Clone) {
         self.add(While::create(f)).await
     }
 }
