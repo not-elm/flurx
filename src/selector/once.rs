@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::selector::Selector;
 
-
+/// Create the task that is executed only once.
 pub fn run<F, Out, State>(f: F) -> impl Selector<State, Output=Out>
     where
         F: Fn(State) -> Out,

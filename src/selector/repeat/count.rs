@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::selector::Selector;
 
+/// Create the task that continues to run the specified number of times.
 ///
 /// ## Panics
 ///

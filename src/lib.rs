@@ -27,8 +27,15 @@ mod tests {
 
     use futures_lite::future::{block_on, poll_once};
 
-    #[derive(Clone, Default)]
+    #[derive(Default)]
     pub struct ResultEvent<T>(Arc<Mutex<T>>);
+
+
+    impl<T> Clone for ResultEvent<T> {
+        fn clone(&self) -> Self {
+            Self(Arc::clone(&self.0))
+        }
+    }
 
     impl<T> ResultEvent<T> where T: Clone {
         pub fn set(&self, t: T) {

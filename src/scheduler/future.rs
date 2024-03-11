@@ -28,10 +28,16 @@ impl<'a, 'b> Future for ReactorsFuture<'a, 'b>
         if self.polled.is_empty() {
             Poll::Ready(())
         } else {
-            while let Some(f) = self.polled.pop() {
-                self.reactors.push(f);
-            }
             Poll::Pending
+        }
+    }
+}
+
+
+impl<'a, 'b> Drop for ReactorsFuture<'a, 'b> {
+    fn drop(&mut self) {
+        while let Some(f) = self.polled.pop() {
+            self.reactors.push(f);
         }
     }
 }

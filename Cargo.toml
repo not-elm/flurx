@@ -8,10 +8,6 @@ name = "once"
 path = "examples/selector/once.rs"
 
 [[example]]
-name = "counter"
-path = "examples/store/counter.rs"
-
-[[example]]
 name = "time"
 path = "examples/selector/time.rs"
 
@@ -19,6 +15,17 @@ path = "examples/selector/time.rs"
 name = "until"
 path = "examples/selector/delay.rs"
 
+[[example]]
+name = "wait"
+path = "examples/selector/wait.rs"
+
+[[example]]
+name = "reducer"
+path = "examples/store/reducer.rs"
+
+[[example]]
+name = "ref_reducer"
+path = "examples/store/ref_reducer.rs"
 
 [dependencies]
 thiserror = "1.0.57"

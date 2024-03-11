@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use crate::selector::Selector;
 
+
+/// Create the task that continues to run indefinitely.
 pub fn forever<State>(f: impl Fn(State)) -> impl Selector<State, Output=()> {
     Forever {
         f,
@@ -53,9 +55,9 @@ mod tests {
 
         scheduler.run(tx.clone()).await;
         drop(scheduler);
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
         let count = rx.get();
-        assert!(0 < count);
+        assert_eq!(0, count);
         assert!(rx2.get());
     }
 }

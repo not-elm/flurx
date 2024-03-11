@@ -48,7 +48,9 @@ impl<'a, State> TaskCreator<'a, State> {
             .await
     }
     
-    pub async fn try_task<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
+    /// This method will not be made public as the specifications have not yet been finalized.
+    #[allow(unused)]
+    pub(crate) async fn try_task<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
         where Sel: Selector<State, Output=Out>,
               State: Clone + 'a
     {

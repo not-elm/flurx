@@ -1,4 +1,4 @@
-use flurx::reducer::Reducer;
+use flurx::prelude::Reducer;
 use flurx::selector::wait;
 use flurx::store::Store;
 
@@ -9,7 +9,6 @@ async fn main() {
 
     reducer.schedule(|task| async move {
         println!("*** Start ***");
-        
         task.task(wait::until(|state| {
             println!("count: {state}");
             state < 10

@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use crate::selector::Selector;
 
+
+/// Create the task that continues to run until the state meets the condition.
 pub fn while_<F, State>(f: F) -> impl Selector<State>
     where
         F: Fn(State) -> bool,
