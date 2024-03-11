@@ -4,14 +4,14 @@ use flurx::selector::wait;
 #[tokio::main]
 async fn main() {
     let mut scheduler = Scheduler::<usize>::new();
-    scheduler.schedule(|task| async move {
+    scheduler.schedule(|tc| async move {
         println!("*** Start ***");
-        task.task(wait::until(|state| {
+        tc.task(wait::until(|state| {
             println!("count: {state}");
             state < 10
         })).await;
 
-        task.task(wait::while_(|state| {
+        tc.task(wait::while_(|state| {
             println!("count: {state}");
             state == 20
         })).await;

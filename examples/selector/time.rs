@@ -7,9 +7,9 @@ use flurx::selector::delay;
 async fn main() {
     let mut scheduler = Scheduler::default();
 
-    scheduler.schedule(|task| async move {
+    scheduler.schedule(|tc| async move {
         println!("*** Delay 3 secs ***");
-        task.task(delay::time(Duration::from_secs(3))).await;
+        tc.task(delay::time(Duration::from_secs(3))).await;
         println!("*** Finish ***");
     });
 

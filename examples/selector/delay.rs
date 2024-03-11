@@ -6,16 +6,16 @@ use flurx::store::Store;
 async fn main() {
     let mut store = Store::<usize>::default();
     let mut reducer = Reducer::new(&mut store);
-    reducer.schedule(|task| async move {
+    reducer.schedule(|tc| async move {
         println!("Wait until count less than 10");
-        task.task(wait::until(|state| {
+        tc.task(wait::until(|state| {
             println!("count: {state}");
             state < 10
         }))
             .await;
 
         println!("Wait while count reaches 20");
-        task.task(wait::while_(|state| {
+        tc.task(wait::while_(|state| {
             println!("count: {state}");
             state == 20
         }))
