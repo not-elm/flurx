@@ -1,6 +1,6 @@
-use store::reducer::Reducer;
-use store::selector::wait;
-use store::store::Store;
+use flurx::reducer::Reducer;
+use flurx::selector::wait;
+use flurx::store::Store;
 
 #[tokio::main]
 async fn main() {

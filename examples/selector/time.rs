@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use store::Scheduler;
-use store::selector::delay;
+use flurx::Scheduler;
+use flurx::selector::delay;
 
 #[tokio::main]
 async fn main() {
