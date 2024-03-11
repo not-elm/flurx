@@ -1,9 +1,8 @@
-pub mod future;
-
 use crate::error::FutureResult;
-
 use crate::selector::Selector;
 use crate::task::future::TaskFuture;
+
+pub mod future;
 
 pub(crate) type StateRef<'a, State> = &'a Option<State>;
 
@@ -12,9 +11,35 @@ pub struct TaskCreator<'a, State> {
 }
 
 impl<'a, State> TaskCreator<'a, State> {
+    /// Create a new task.
+    ///
+    /// Several [`Selector`](crate::selector::Selector)s are provided by default, but you can also define your own.
+    ///
+    /// The default [`Selector`](crate::selector::Selector)s are as follows.
+    ///
+    /// * [`wait::until`](crate::prelude::wait::until)
+    /// * [`wait::while`](crate::prelude::wait::while_)
+    /// * [`once::run`](crate::prelude::once::run)
+    /// * [`repeat::count`](crate::prelude::repeat::count)
+    /// * [`repeat::forever`](crate::prelude::repeat::forever)
+    /// * [`delay::time`](crate::prelude::delay::time)
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// use flurx::prelude::once;
+    /// use flurx::Scheduler;
+    ///
+    /// let mut scheduler = Scheduler::<usize>::new();
+    /// scheduler.schedule(|tc|async move{
+    ///     tc.task(once::run(|state: usize|{
+    ///         state
+    ///     })).await;
+    /// });
+    /// ```
     pub async fn task<Out, Sel>(&self, selector: Sel) -> Out
         where Sel: Selector<State, Output=Out>,
-        State: Clone + 'a
+              State: Clone + 'a
     {
         TaskFuture::<State, Sel, false> {
             state: self.state,
@@ -22,10 +47,10 @@ impl<'a, State> TaskCreator<'a, State> {
         }
             .await
     }
-
+    
     pub async fn try_task<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
         where Sel: Selector<State, Output=Out>,
-        State: Clone + 'a
+              State: Clone + 'a
     {
         TaskFuture::<State, Sel, true> {
             state: self.state,

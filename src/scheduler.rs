@@ -32,6 +32,15 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
         }
     }
     
+    pub fn pending_reactors_count(&self) -> usize{
+        self.reactors.len()
+    }
+    
+    pub fn not_exists_pending(&self) -> bool{
+        self.pending_reactors_count() == 0
+    }
+    
+    
     /// Schedule the new [`Reactor`].
     ///
     /// The reality [`Reactor`] is [`Future`], it is polled once every time [`Scheduler::run`] is called.
