@@ -2,6 +2,13 @@
 name = "flurx"
 version = "0.1.0"
 edition = "2021"
+authors = ["elm"]
+categories = ["asynchronous"]
+description = "Provides the ability to wait for game status asynchronously."
+keywords = ["async"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/not-elm/flurx"
 
 [[example]]
 name = "once"
