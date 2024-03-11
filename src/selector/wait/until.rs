@@ -4,7 +4,7 @@ use crate::selector::Selector;
 
 pub fn until<F, State>(f: F) -> impl Selector<State>
     where
-        F: Fn(&State) -> bool,
+        F: Fn(State) -> bool,
 {
     Until(f, PhantomData)
 }
@@ -13,11 +13,11 @@ struct Until<F, State>(F, PhantomData<State>);
 
 impl<F, State> Selector<State> for Until<F, State>
     where
-        F: Fn(&State) -> bool
+        F: Fn(State) -> bool
 {
     type Output = ();
 
-    fn select(&self, state: &State) -> Option<Self::Output> {
+    fn select(&self, state: State) -> Option<Self::Output> {
         if self.0(state) {
             None
         } else {
@@ -37,9 +37,9 @@ mod tests {
     async fn until_string_is_hello() {
         let mut scheduler = Scheduler::<&'static str>::default();
         let (tx, rx) = result_event();
-        scheduler.schedule(|task| async move {
-            task.task(wait::until(|state: &&'static str| {
-                *state == "hello"
+        scheduler.schedule(|tc| async move {
+            tc.task(wait::until(|state: &'static str| {
+                state == "hello"
             })).await;
             tx.set(true);
         });

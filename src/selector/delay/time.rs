@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::selector::Selector;
 
+#[must_use]
 pub fn time<State>(duration: Duration) -> impl Selector<State> {
     Time {
         start: Instant::now(),
@@ -22,7 +23,7 @@ impl<State> Selector<State> for Time<State>
 {
     type Output = ();
 
-    fn select(&self, _: &State) -> Option<Self::Output> {
+    fn select(&self, _: State) -> Option<Self::Output> {
         let elapsed = Instant::now().duration_since(self.start);
         if self.duration <= elapsed {
             Some(())

@@ -12,7 +12,7 @@ async fn main() {
         
         task.task(wait::until(|state| {
             println!("count: {state}");
-            *state < 10
+            state < 10
         }))
             .await;
         println!("*** Finish ***");

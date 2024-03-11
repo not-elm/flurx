@@ -1,20 +1,20 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::scheduler::future::SchedulerFuture;
+use crate::scheduler::future::ReactorsFuture;
 use crate::scheduler::state_ptr::StatePtr;
 use crate::task::TaskCreator;
 
 mod future;
 mod state_ptr;
 
-type PinFuture<'a> = Pin<Box<dyn Future<Output=()> + 'a>>;
+pub(crate) type Reactor<'a> = Pin<Box<dyn Future<Output=()> + 'a>>;
 
 
 #[derive(Default)]
 pub struct Scheduler<'a, 'b, State> {
     state: StatePtr<'a, State>,
-    futures: Vec<PinFuture<'b>>,
+    reactors: Vec<Reactor<'b>>,
 }
 
 
@@ -23,30 +23,58 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
         'a: 'b,
         State: 'a + 'b
 {
+    #[must_use]
+    /// Creates the empty scheduler.
     pub const fn new() -> Scheduler<'a, 'b, State> {
         Self {
             state: StatePtr::uninit(),
-            futures: Vec::new(),
+            reactors: Vec::new(),
         }
     }
-
+    
+    /// Schedule the new [`Reactor`].
+    ///
+    /// The reality [`Reactor`] is [`Future`], it is polled once every time [`Scheduler::run`] is called.
+    /// 
+    /// ## Examples
+    /// ```no_run
+    /// use flurx::prelude::*;
+    /// 
+    /// #[tokio::main]
+    /// async fn main(){
+    ///     let mut scheduler = Scheduler::<usize>::new();
+    ///     scheduler.schedule(|tc|async move{
+    ///         // (1)
+    ///         tc.task(wait::until(|state: usize|{
+    ///             state < 2
+    ///         })).await;
+    ///     });
+    ///     // state is 0, (1) returns [`Future::Pending`].
+    ///     scheduler.run(0).await;
+    ///     // state is 1, (1) returns [`Future::Pending`].
+    ///     scheduler.run(1).await;
+    ///     // state is 2, (1) returns [`Future::Ready(2)`].
+    ///     scheduler.run(2).await;
+    /// }
+    /// ```
     pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
         where F: Future<Output=()> + 'b,
     {
-        self.futures.push(Box::pin(f(TaskCreator {
+        self.reactors.push(Box::pin(f(TaskCreator {
             state: self.state.state_ref()
         })));
     }
 
+    /// Poll all registered features once each.
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
 
-        let len = self.futures.len();
-        SchedulerFuture {
-            futures: &mut self.futures,
+        let len = self.reactors.len();
+        ReactorsFuture {
+            reactors: &mut self.reactors,
             polled: Vec::with_capacity(len),
         }
-            .await
+            .await;
     }
 }
 
@@ -65,8 +93,8 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.task(wait::until(|state: &i32| {
-                *state < 2
+            task.task(wait::until(|state| {
+                state < 2
             })).await;
             *r.lock().unwrap() = true;
         });
@@ -86,12 +114,12 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|tc| async move {
-            tc.task(wait::while_(|state: &i32| {
-                *state == 2
+            tc.task(wait::while_(|state| {
+                state == 2
             })).await;
 
-            tc.task(wait::until(|state: &i32| {
-                *state < 3
+            tc.task(wait::until(|state| {
+                state < 3
             })).await;
 
             *r.lock().unwrap() = true;

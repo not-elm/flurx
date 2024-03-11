@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [[example]]
+name = "once"
+path = "examples/selector/once.rs"
+
+[[example]]
 name = "counter"
 path = "examples/store/counter.rs"
 
@@ -21,4 +25,5 @@ thiserror = "1.0.57"
 
 [dev-dependencies]
 futures-lite = "2.2.0"
-tokio = {version = "1.36.0", features = ["full"]}
+tokio = { version = "1.36.0", features = ["full"] }
+reqwest = "0.11.25"

@@ -11,11 +11,14 @@ impl<State> Store<State> {
         unsafe { ptr::read(self.state.get()) }
     }
 
+    pub(crate) fn read_ref<'a>(&self) -> &'a State {
+        unsafe { &* self.state.get() }
+    }
+
     pub(crate) fn ref_mut(&mut self) -> &mut State {
         self.state.get_mut()
     }
 }
-
 
 impl<State> Store<State> {
     pub const fn new(state: State) -> Store<State> {
@@ -24,7 +27,6 @@ impl<State> Store<State> {
         }
     }
 }
-
 
 impl<State> Store<Option<State>> {
     pub const fn uninit() -> Store<Option<State>> {

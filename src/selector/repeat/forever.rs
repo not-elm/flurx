@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::selector::Selector;
 
-pub fn forever<State>(f: impl Fn(&State)) -> impl Selector<State, Output=()> {
+pub fn forever<State>(f: impl Fn(State)) -> impl Selector<State, Output=()> {
     Forever {
         f,
         _m1: PhantomData,
@@ -15,11 +15,11 @@ struct Forever<F, State> {
 }
 
 impl<F, State> Selector<State> for Forever<F, State>
-    where F: Fn(&State)
+    where F: Fn(State)
 {
     type Output = ();
 
-    fn select(&self, state: &State) -> Option<Self::Output> {
+    fn select(&self, state: State) -> Option<Self::Output> {
         (self.f)(state);
         None
     }
@@ -41,7 +41,7 @@ mod tests {
         let (tx2, rx2) = result_event::<bool>();
         scheduler.schedule(|tc| async move {
             tokio::spawn(async move {
-                let result = tc.try_task(repeat::forever(|state: &ResultEvent<usize>| {
+                let result = tc.try_task(repeat::forever(|state: ResultEvent<usize>| {
                     state.set(state.get() + 1);
                 }))
                     .await;

@@ -13,7 +13,8 @@ pub struct TaskCreator<'a, State> {
 
 impl<'a, State> TaskCreator<'a, State> {
     pub async fn task<Out, Sel>(&self, selector: Sel) -> Out
-        where Sel: Selector<State, Output=Out>
+        where Sel: Selector<State, Output=Out>,
+        State: Clone + 'a
     {
         TaskFuture::<State, Sel, false> {
             state: self.state,
@@ -23,7 +24,8 @@ impl<'a, State> TaskCreator<'a, State> {
     }
 
     pub async fn try_task<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
-        where Sel: Selector<State, Output=Out>
+        where Sel: Selector<State, Output=Out>,
+        State: Clone + 'a
     {
         TaskFuture::<State, Sel, true> {
             state: self.state,
@@ -32,7 +34,6 @@ impl<'a, State> TaskCreator<'a, State> {
             .await
     }
 }
-
 
 impl<'a, State> Clone for TaskCreator<'a, State> {
     fn clone(&self) -> Self { *self }
@@ -56,8 +57,8 @@ mod tests {
         let task = TaskCreator {
             state: unsafe { &*state.get() }
         };
-        let f = task.task(|state: &i32| {
-            if *state == 1 {
+        let f = task.task(|state: i32| {
+            if state == 1 {
                 Some(())
             } else {
                 None

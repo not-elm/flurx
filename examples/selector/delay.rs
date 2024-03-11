@@ -10,14 +10,14 @@ async fn main() {
         println!("Wait until count less than 10");
         task.task(wait::until(|state| {
             println!("count: {state}");
-            *state < 10
+            state < 10
         }))
             .await;
 
         println!("Wait while count reaches 20");
         task.task(wait::while_(|state| {
             println!("count: {state}");
-            *state == 20
+            state == 20
         }))
             .await;
 

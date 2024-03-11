@@ -20,16 +20,12 @@ impl<'a, State> StatePtr<'a, State> {
 
     pub(crate) fn state_ref(&mut self) -> &'a Option<State> {
         if self.0.is_empty() {
-            self.0.push(None)
+            self.0.push(None);
         }
-        
+
         unsafe {
             let ptr = self.0.as_ptr();
-            if ptr.is_null() {
-                &None
-            } else {
-                &*ptr
-            }
+            &*ptr
         }
     }
 }

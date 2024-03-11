@@ -14,12 +14,13 @@ pub(crate) struct TaskFuture<'a, State, Selector, const SAFETY: bool> {
 
 impl<'a, State, Sel> Future for TaskFuture<'a, State, Sel, true>
     where
-        Sel: Selector<State>
+        Sel: Selector<State>,
+        State: Clone + 'a
 {
     type Output = FutureResult<Sel::Output>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.do_poll(cx) {
+        match self.try_poll(cx) {
             Err(e) => Poll::Ready(Err(e)),
             Ok(Some(output)) => Poll::Ready(Ok(output)),
             Ok(None) => Poll::Pending
@@ -29,12 +30,13 @@ impl<'a, State, Sel> Future for TaskFuture<'a, State, Sel, true>
 
 impl<'a, State, Sel> Future for TaskFuture<'a, State, Sel, false>
     where
-        Sel: Selector<State>
+        Sel: Selector<State>,
+        State: Clone + 'a
 {
     type Output = Sel::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.do_poll(cx) {
+        match self.try_poll(cx) {
             Err(e) => {
                 panic!("{e}");
             }
@@ -46,10 +48,11 @@ impl<'a, State, Sel> Future for TaskFuture<'a, State, Sel, false>
 
 impl<'a, State, Sel, const SAFETY: bool> TaskFuture<'a, State, Sel, SAFETY>
     where
-        Sel: Selector<State>
+        Sel: Selector<State>,
+        State: Clone + 'a
 {
-    fn do_poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Result<Option<Sel::Output>, AlreadyDroppedScheduler> {
-        let state = self.state.as_ref().ok_or(AlreadyDroppedScheduler)?;
+    fn try_poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Result<Option<Sel::Output>, AlreadyDroppedScheduler> {
+        let state = self.state.as_ref().ok_or(AlreadyDroppedScheduler)?.clone();
         if let Some(output) = self.selector.select(state) {
             Ok(Some(output))
         } else {
@@ -87,7 +90,7 @@ mod tests {
         let mut state = UnsafeCell::new(None);
         let mut future = TaskFuture::new_non_safety(unsafe {
             &*state.get()
-        }, wait::while_(|state| *state == 1));
+        }, wait::while_(|state| state == 1));
 
         *state.get_mut() = Some(0);
         assert!(block_on(poll_once(&mut future)).is_none());
