@@ -3,13 +3,13 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use crate::scheduler::PinFuture;
 
-pub(crate) struct SchedulerHandle<'a, 'b> {
+pub(crate) struct SchedulerFuture<'a, 'b> {
     pub futures: &'b mut Vec<PinFuture<'a>>,
     pub polled: Vec<PinFuture<'a>>,
 }
 
 
-impl<'a, 'b> Future for SchedulerHandle<'a, 'b>
+impl<'a, 'b> Future for SchedulerFuture<'a, 'b>
 
 {
     type Output = ();

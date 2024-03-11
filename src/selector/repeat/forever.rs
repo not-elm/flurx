@@ -28,28 +28,34 @@ impl<F, State> Selector<State> for Forever<F, State>
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use crate::Scheduler;
     use crate::selector::repeat;
     use crate::tests::{result_event, ResultEvent};
 
     #[tokio::test]
-    async fn select_task() {
+    async fn return_error_already_dropped_scheduler() {
         let mut scheduler = Scheduler::<ResultEvent<usize>>::default();
         let (tx, rx) = result_event::<usize>();
-        scheduler.schedule(|task| async move {
-            let t1 = task.task(repeat::forever(|state: &ResultEvent<usize>| {
-                state.set(state.get() + 1);
-            }));
-            let t2 = task.task(repeat::count(1, |_| {}));
-            tokio::select! {
-                _ = t1 => {},
-                _ = t2 => {}
-            }
+        let (tx2, rx2) = result_event::<bool>();
+        scheduler.schedule(|tc| async move {
+            tokio::spawn(async move {
+                let result = tc.try_task(repeat::forever(|state: &ResultEvent<usize>| {
+                    state.set(state.get() + 1);
+                }))
+                    .await;
+                if result.is_err() {
+                    tx2.set(true);
+                }
+            });
         });
-        scheduler.run(tx.clone()).await;
-        scheduler.run(tx.clone()).await;
 
+        scheduler.run(tx.clone()).await;
+        drop(scheduler);
+        tokio::time::sleep(Duration::from_millis(100)).await;
         let count = rx.get();
-        assert!(count <= 1);
+        assert!(0 < count);
+        assert!(rx2.get());
     }
 }

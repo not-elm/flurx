@@ -1,11 +1,11 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::scheduler::handle::SchedulerHandle;
+use crate::scheduler::future::SchedulerFuture;
 use crate::scheduler::state_ptr::StatePtr;
 use crate::task::TaskCreator;
 
-mod handle;
+mod future;
 mod state_ptr;
 
 type PinFuture<'a> = Pin<Box<dyn Future<Output=()> + 'a>>;
@@ -23,13 +23,12 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
         'a: 'b,
         State: 'a + 'b
 {
-    pub const fn new(state: State) -> Scheduler<'a, 'b, State>{
-        Self{
-            state: StatePtr::new(state),
-            futures: Vec::new()
+    pub const fn new() -> Scheduler<'a, 'b, State> {
+        Self {
+            state: StatePtr::uninit(),
+            futures: Vec::new(),
         }
     }
-
 
     pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
         where F: Future<Output=()> + 'b,
@@ -43,7 +42,7 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
         self.state.set(state);
 
         let len = self.futures.len();
-        SchedulerHandle {
+        SchedulerFuture {
             futures: &mut self.futures,
             polled: Vec::with_capacity(len),
         }
@@ -90,7 +89,7 @@ mod tests {
             tc.task(wait::while_(|state: &i32| {
                 *state == 2
             })).await;
-            
+
             tc.task(wait::until(|state: &i32| {
                 *state < 3
             })).await;

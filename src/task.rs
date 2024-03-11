@@ -1,24 +1,44 @@
-use crate::future::StateFuture;
-use crate::selector::Selector;
+pub mod future;
 
-pub(crate) type StateRef<'a, State> = &'a State;
+use crate::error::FutureResult;
+
+use crate::selector::Selector;
+use crate::task::future::TaskFuture;
+
+pub(crate) type StateRef<'a, State> = &'a Option<State>;
 
 pub struct TaskCreator<'a, State> {
     pub(crate) state: StateRef<'a, State>,
 }
 
-
 impl<'a, State> TaskCreator<'a, State> {
-    pub async fn task<Output, Sel>(&self, selector: Sel) -> Output
-        where Sel: Selector<State, Output=Output>
+    pub async fn task<Out, Sel>(&self, selector: Sel) -> Out
+        where Sel: Selector<State, Output=Out>
     {
-        StateFuture {
+        TaskFuture::<State, Sel, false> {
+            state: self.state,
+            selector,
+        }
+            .await
+    }
+
+    pub async fn try_task<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
+        where Sel: Selector<State, Output=Out>
+    {
+        TaskFuture::<State, Sel, true> {
             state: self.state,
             selector,
         }
             .await
     }
 }
+
+
+impl<'a, State> Clone for TaskCreator<'a, State> {
+    fn clone(&self) -> Self { *self }
+}
+
+impl<'a, State> Copy for TaskCreator<'a, State> {}
 
 
 #[cfg(test)]
@@ -32,7 +52,7 @@ mod tests {
 
     #[test]
     fn once_wait() {
-        let mut state = UnsafeCell::new(0);
+        let mut state = UnsafeCell::new(None);
         let task = TaskCreator {
             state: unsafe { &*state.get() }
         };
@@ -44,8 +64,9 @@ mod tests {
             }
         });
         pin!(f);
+        *state.get_mut() = Some(0);
         assert!(poll_once_block(&mut f).is_none());
-        *state.get_mut() = 1;
+        *state.get_mut() = Some(1);
         assert!(poll_once_block(&mut f).is_some());
     }
 }

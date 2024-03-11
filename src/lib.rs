@@ -1,12 +1,23 @@
 pub use scheduler::Scheduler;
 
-mod future;
 pub mod selector;
 pub mod task;
 pub mod store;
 pub mod dispatch;
 pub mod reducer;
-mod scheduler;
+pub mod scheduler;
+pub mod error;
+
+pub mod prelude {
+    pub use crate::{
+        dispatch::Dispatch,
+        error::{AlreadyDroppedScheduler, FutureResult},
+        reducer::Reducer,
+        scheduler::Scheduler,
+        selector::*,
+        task::TaskCreator,
+    };
+}
 
 #[cfg(test)]
 mod tests {
@@ -15,7 +26,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use futures_lite::future::{block_on, poll_once};
-    
+
     #[derive(Clone, Default)]
     pub struct ResultEvent<T>(Arc<Mutex<T>>);
 
