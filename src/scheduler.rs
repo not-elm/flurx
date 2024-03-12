@@ -41,8 +41,14 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
 
     #[must_use]
     #[inline]
-    pub fn not_exists_pending(&self) -> bool {
+    pub fn not_exists_pending_reactors(&self) -> bool {
         self.pending_reactors_count() == 0
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn exists_pending_reactors(&self) -> bool {
+        0 < self.pending_reactors_count()
     }
 
 
@@ -82,7 +88,7 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
         })));
     }
 
-    /// Poll all registered features once each.
+    /// Poll all registered `Reactors` once each.
     #[inline]
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
@@ -93,6 +99,15 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
             polled: Vec::with_capacity(len),
         }
             .await;
+    }
+
+
+    /// Synchronously poll all registered `Reactors` once each.
+    #[inline]
+    #[cfg(feature = "sync")]
+    pub fn run_sync(&mut self, state: State) {
+        use async_compat::CompatExt;
+        pollster::block_on(self.run(state).compat())
     }
 }
 
