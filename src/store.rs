@@ -1,5 +1,4 @@
-use std::cell::UnsafeCell;
-use std::ptr;
+use core::cell::UnsafeCell;
 
 #[derive(Default)]
 pub struct Store<State> {
@@ -7,20 +6,19 @@ pub struct Store<State> {
 }
 
 impl<State> Store<State> {
-    pub(crate) fn read(&self) -> State {
-        unsafe { ptr::read(self.state.get()) }
+    pub(in crate) fn read_ref<'state>(&self) -> &'state State {
+        // SAFETY:
+        // Lifetime is safe because it coincides with the borrowing period of this `Store`.
+        unsafe { &*self.state.get() }
     }
 
-    pub(crate) fn read_ref<'a>(&self) -> &'a State {
-        unsafe { &* self.state.get() }
-    }
-
-    pub(crate) fn ref_mut(&mut self) -> &mut State {
+    pub(in crate) fn ref_mut(&mut self) -> &mut State {
         self.state.get_mut()
     }
 }
 
 impl<State> Store<State> {
+    #[inline]
     pub const fn new(state: State) -> Store<State> {
         Store {
             state: UnsafeCell::new(state)
@@ -29,6 +27,7 @@ impl<State> Store<State> {
 }
 
 impl<State> Store<Option<State>> {
+    #[inline]
     pub const fn uninit() -> Store<Option<State>> {
         Store {
             state: UnsafeCell::new(None)

@@ -1,5 +1,5 @@
-use std::future::Future;
-use std::mem;
+use core::future::Future;
+use core::mem;
 
 use crate::dispatch::Dispatch;
 use crate::prelude::ReactiveTask;
@@ -7,30 +7,37 @@ use crate::reducer::base::ReducerInner;
 use crate::store::Store;
 
 #[repr(transparent)]
-pub struct RefReducer<'a, 'b, State>(ReducerInner<'a, 'b, State, &'a State>);
+pub struct RefReducer<'state, 'future, State>(ReducerInner<'state, 'future, State, &'state State>);
 
-impl<'a, 'b, State> RefReducer<'a, 'b, State>
+impl<'state, 'future, State> RefReducer<'state, 'future, State>
     where
-        'a: 'b,
-        State: 'a + 'b + Default
+        'state: 'future,
+        State: 'state + 'future
 {
-    pub fn new(store: &'a mut Store<State>) -> RefReducer<'a, 'b, State> {
+    #[inline]
+    pub fn new(store: &'state mut Store<State>) -> RefReducer<'state, 'future, State> {
         Self(ReducerInner::new(store))
     }
 }
 
-impl<'a, 'b, State> RefReducer<'a, 'b, State>
+impl<'state, 'future, State> RefReducer<'state, 'future, State>
     where
-        'a: 'b,
-        State: 'a + 'b + Default
+        'state: 'future,
+        State: 'state + 'future + Default
 {
-    pub fn schedule<F>(&mut self, f: impl FnOnce(ReactiveTask<'a, &'a State>) -> F)
-        where F: Future<Output=()> + 'b
+    #[inline]
+    pub fn schedule<F, Fut>(&mut self, f: F)
+        where
+            F: FnOnce(ReactiveTask<'state, &'state State>) -> Fut,
+            Fut: Future<Output=()> + 'future
     {
         self.0.scheduler.schedule(f);
     }
 
-    pub async fn dispatch(&mut self, dispatch: impl Dispatch<State>) {
+    #[inline]
+    pub async fn dispatch<D>(&mut self, dispatch: D)
+        where D: Dispatch<State>
+    {
         let state = mem::take(self.0.store.ref_mut());
 
         *self.0.store.ref_mut() = dispatch.dispatch(state);

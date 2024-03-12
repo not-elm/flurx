@@ -1,8 +1,9 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::selector::Selector;
 
 /// Create the task continues to run as long as the state meets the condition.
+#[inline]
 pub fn until<F, State>(f: F) -> impl Selector<State>
     where
         F: Fn(State) -> bool,
@@ -19,11 +20,7 @@ impl<F, State> Selector<State> for Until<F, State>
     type Output = ();
 
     fn select(&self, state: State) -> Option<Self::Output> {
-        if self.0(state) {
-            Some(())
-        } else {
-            None
-        }
+        self.0(state).then_some(())
     }
 }
 

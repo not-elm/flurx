@@ -1,10 +1,14 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::selector::Selector;
 
 
 /// Create the task that continues to run indefinitely.
-pub fn forever<State>(f: impl Fn(State)) -> impl Selector<State, Output=()> {
+#[inline]
+pub fn forever<F, State>(f: F) -> impl Selector<State, Output=()> 
+    where 
+        F: Fn(State)
+{
     Forever {
         f,
         _m1: PhantomData,

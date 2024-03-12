@@ -1,18 +1,19 @@
 use crate::Scheduler;
 use crate::store::Store;
 
-pub(crate) struct ReducerInner<'a, 'b, State, ScheduleState = State> {
-    pub(crate) store: &'a mut Store<State>,
-    pub(crate) scheduler: Scheduler<'a, 'b, ScheduleState>,
+pub(in crate) struct ReducerInner<'state, 'future, State, ScheduleState = State> {
+    pub(in crate) store: &'state mut Store<State>,
+    pub(in crate) scheduler: Scheduler<'state, 'future, ScheduleState>,
 }
 
 
-impl<'a, 'b, State, ScheduleState> ReducerInner<'a, 'b, State, ScheduleState>
+impl<'state, 'future, State, ScheduleState> ReducerInner<'state, 'future, State, ScheduleState>
     where
-        'a: 'b,
-        State: 'a + 'b + Default
+        'state: 'future,
+        State: 'state + 'future,
+        ScheduleState: Clone + 'state + 'future
 {
-    pub fn new(store: &'a mut Store<State>) -> ReducerInner<'a, 'b, State, ScheduleState> {
+    pub fn new(store: &'state mut Store<State>) -> ReducerInner<'state, 'future, State, ScheduleState> {
         Self {
             store,
             scheduler: Scheduler::new(),

@@ -1,3 +1,15 @@
+#![allow(
+clippy::implicit_return, 
+clippy::min_ident_chars,
+clippy::missing_docs_in_private_items,
+clippy::pub_use,
+clippy::question_mark_used,
+clippy::pub_with_shorthand,
+clippy::pub_without_shorthand,
+clippy::self_named_module_files,
+clippy::single_call_fn
+)]
+
 pub use scheduler::Scheduler;
 
 pub mod selector;
@@ -21,7 +33,7 @@ pub mod prelude {
 
 #[cfg(test)]
 mod tests {
-    use std::future::Future;
+    use core::future::Future;
     use std::pin::Pin;
     use std::sync::{Arc, Mutex};
 
@@ -54,7 +66,7 @@ mod tests {
     }
 
 
-    pub(crate) fn poll_once_block<F>(future: &mut Pin<&mut F>) -> Option<F::Output>
+    pub(in crate) fn poll_once_block<F>(future: &mut Pin<&mut F>) -> Option<F::Output>
         where F: Future
     {
         block_on(poll_once(future))

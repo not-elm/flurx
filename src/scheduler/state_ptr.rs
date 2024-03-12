@@ -1,28 +1,31 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[repr(transparent)]
 #[derive(Default)]
-pub(crate) struct StatePtr<'a, State>(Vec<Option<State>>, PhantomData<&'a State>);
+pub(crate) struct StatePtr<'state, State>(Vec<Option<State>>, PhantomData<&'state State>);
 
 
-impl<'a, State> StatePtr<'a, State> {
-    pub const fn uninit() -> StatePtr<'a, State> {
+impl<'state, State> StatePtr<'state, State> {
+    pub(super) const fn uninit() -> StatePtr<'state, State> {
         StatePtr(Vec::new(), PhantomData)
     }
 
     pub fn set(&mut self, state: State) {
-        if self.0.is_empty() {
-            self.0.push(Some(state));
+        if let Some(now) = self.0.get_mut(0) {
+            *now = Some(state);
         } else {
-            self.0[0] = Some(state);
+            self.0.push(Some(state));
         }
     }
 
-    pub(crate) fn state_ref(&mut self) -> &'a Option<State> {
+    pub(in crate) fn state_ref(&mut self) -> &'state Option<State> {
         if self.0.is_empty() {
             self.0.push(None);
         }
-
+        
+        // SAFETY:
+        // Lifetime can be longer than the actual validity period.
+        // In such cases, the content of Option will be None, and panic will occur when the task uses this value.
         unsafe {
             let ptr = self.0.as_ptr();
             &*ptr
@@ -30,9 +33,11 @@ impl<'a, State> StatePtr<'a, State> {
     }
 }
 
-impl<'a, State> Drop for StatePtr<'a, State> {
+impl<'state, State> Drop for StatePtr<'state, State> {
     fn drop(&mut self) {
-        self.0[0].take();
+        if let Some(state) = self.0.get_mut(0){
+            state.take();
+        }
     }
 }
 

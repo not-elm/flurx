@@ -4,13 +4,13 @@ use crate::task::future::TaskFuture;
 
 pub mod future;
 
-pub(crate) type StateRef<'a, State> = &'a Option<State>;
+pub(in crate) type StateRef<'state, State> = &'state Option<State>;
 
-pub struct ReactiveTask<'a, State> {
-    pub(crate) state: StateRef<'a, State>,
+pub struct ReactiveTask<'state, State> {
+    pub(in crate) state: StateRef<'state, State>,
 }
 
-impl<'a, State> ReactiveTask<'a, State> {
+impl<'state, State> ReactiveTask<'state, State> {
     /// Create a new task.
     ///
     /// Several [`Selector`](crate::selector::Selector)s are provided by default, but you can also define your own.
@@ -37,9 +37,10 @@ impl<'a, State> ReactiveTask<'a, State> {
     ///     })).await;
     /// });
     /// ```
+    #[inline]
     pub async fn will<Out, Sel>(&self, selector: Sel) -> Out
         where Sel: Selector<State, Output=Out>,
-              State: Clone + 'a
+              State: Clone + 'state
     {
         TaskFuture::<State, Sel, false> {
             state: self.state,
@@ -50,9 +51,9 @@ impl<'a, State> ReactiveTask<'a, State> {
     
     /// This method will not be made public as the specifications have not yet been finalized.
     #[allow(unused)]
-    pub(crate) async fn try_will<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
+    pub(in crate) async fn try_will<Out, Sel>(&self, selector: Sel) -> FutureResult<Out>
         where Sel: Selector<State, Output=Out>,
-              State: Clone + 'a
+              State: Clone + 'state
     {
         TaskFuture::<State, Sel, true> {
             state: self.state,
@@ -62,11 +63,13 @@ impl<'a, State> ReactiveTask<'a, State> {
     }
 }
 
-impl<'a, State> Clone for ReactiveTask<'a, State> {
+#[allow(clippy::missing_trait_methods)]
+impl<'state, State> Clone for ReactiveTask<'state, State> {
+    #[inline]
     fn clone(&self) -> Self { *self }
 }
 
-impl<'a, State> Copy for ReactiveTask<'a, State> {}
+impl<'state, State> Copy for ReactiveTask<'state, State> {}
 
 
 #[cfg(test)]

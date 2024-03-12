@@ -1,9 +1,11 @@
-use std::marker::PhantomData;
-use std::time::{Duration, Instant};
+use core::marker::PhantomData;
+use core::time::{Duration};
+use std::time::Instant;
 
 use crate::selector::Selector;
 
 #[must_use]
+#[inline]
 pub fn time<State>(duration: Duration) -> impl Selector<State> {
     Time {
         start: Instant::now(),
@@ -25,11 +27,7 @@ impl<State> Selector<State> for Time<State>
 
     fn select(&self, _: State) -> Option<Self::Output> {
         let elapsed = Instant::now().duration_since(self.start);
-        if self.duration <= elapsed {
-            Some(())
-        } else {
-            None
-        }
+        (self.duration <= elapsed).then_some(())
     }
 }
 

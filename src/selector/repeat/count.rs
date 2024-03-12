@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use core::marker::PhantomData;
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::selector::Selector;
 
@@ -8,7 +8,11 @@ use crate::selector::Selector;
 /// ## Panics
 ///
 /// Count is 0.
-pub fn count<State, Out>(count: usize, f: impl Fn(State) -> Out) -> impl Selector<State, Output=Out> {
+#[inline]
+pub fn count<F, State, Out>(count: usize, f: F) -> impl Selector<State, Output=Out> 
+    where 
+        F: Fn(State) -> Out
+{
     assert_ne!(count, 0, "`count` must be greater than or equal to 1.");
 
     RepeatCount {

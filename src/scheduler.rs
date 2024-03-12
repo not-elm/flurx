@@ -1,5 +1,5 @@
-use std::future::Future;
-use std::pin::Pin;
+use core::future::Future;
+use core::pin::Pin;
 
 use crate::scheduler::future::ReactorsFuture;
 use crate::scheduler::state_ptr::StatePtr;
@@ -8,34 +8,39 @@ use crate::task::ReactiveTask;
 mod future;
 mod state_ptr;
 
-pub(crate) type Reactor<'a> = Pin<Box<dyn Future<Output=()> + 'a>>;
+pub(crate) type Reactor<'state> = Pin<Box<dyn Future<Output=()> + 'state>>;
 
 
 #[derive(Default)]
-pub struct Scheduler<'a, 'b, State> {
-    state: StatePtr<'a, State>,
-    reactors: Vec<Reactor<'b>>,
+pub struct Scheduler<'state, 'future, State> {
+    state: StatePtr<'state, State>,
+    reactors: Vec<Reactor<'future>>,
 }
 
 
-impl<'a, 'b, State> Scheduler<'a, 'b, State>
+impl<'state, 'future, State> Scheduler<'state, 'future, State>
     where
-        'a: 'b,
-        State: 'a + 'b
+        'state: 'future,
+        State: Clone + 'state + 'future
 {
     #[must_use]
+    #[inline]
     /// Creates the empty scheduler.
-    pub const fn new() -> Scheduler<'a, 'b, State> {
+    pub const fn new() -> Scheduler<'state, 'future, State> {
         Self {
             state: StatePtr::uninit(),
             reactors: Vec::new(),
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn pending_reactors_count(&self) -> usize {
         self.reactors.len()
     }
 
+    #[must_use]
+    #[inline]
     pub fn not_exists_pending(&self) -> bool {
         self.pending_reactors_count() == 0
     }
@@ -66,8 +71,11 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
     ///     scheduler.run(2).await;
     /// }
     /// ```
-    pub fn schedule<F>(&mut self, f: impl FnOnce(ReactiveTask<'a, State>) -> F)
-        where F: Future<Output=()> + 'b,
+    #[inline]
+    pub fn schedule<F, Fut>(&mut self, f: F)
+        where
+            F: FnOnce(ReactiveTask<'state, State>) -> Fut,
+            Fut: Future<Output=()> + 'future,
     {
         self.reactors.push(Box::pin(f(ReactiveTask {
             state: self.state.state_ref()
@@ -75,6 +83,7 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
     }
 
     /// Poll all registered features once each.
+    #[inline]
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
 

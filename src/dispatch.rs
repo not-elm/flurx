@@ -11,6 +11,7 @@ pub trait Dispatch<State> {
 impl<State, F> Dispatch<State> for F
     where F: FnOnce(State) -> State
 {
+    #[inline]
     fn dispatch(self, current: State) -> State {
         (self)(current)
     }

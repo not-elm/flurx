@@ -21,6 +21,7 @@ impl<State, Output, F> Selector<State> for F
 {
     type Output = Output;
 
+    #[inline]
     fn select(&self, state: State) -> Option<Self::Output> {
         (self)(state)
     }

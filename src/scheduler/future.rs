@@ -1,16 +1,16 @@
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use core::future::Future;
+use core::pin::Pin;
+use core::task::{Context, Poll};
 
 use crate::scheduler::Reactor;
 
-pub(crate) struct ReactorsFuture<'a, 'b> {
-    pub reactors: &'b mut Vec<Reactor<'a>>,
-    pub polled: Vec<Reactor<'a>>,
+pub(crate) struct ReactorsFuture<'state, 'future> {
+    pub reactors: &'future mut Vec<Reactor<'state>>,
+    pub polled: Vec<Reactor<'state>>,
 }
 
 
-impl<'a, 'b> Future for ReactorsFuture<'a, 'b>
+impl<'state, 'future> Future for ReactorsFuture<'state, 'future>
 
 {
     type Output = ();
@@ -34,7 +34,7 @@ impl<'a, 'b> Future for ReactorsFuture<'a, 'b>
 }
 
 
-impl<'a, 'b> Drop for ReactorsFuture<'a, 'b> {
+impl<'state, 'future> Drop for ReactorsFuture<'state, 'future> {
     fn drop(&mut self) {
         while let Some(f) = self.polled.pop() {
             self.reactors.push(f);
