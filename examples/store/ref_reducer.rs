@@ -11,7 +11,7 @@ async fn main() {
         println!("*** Start ***");
         task.will(wait::until(|state: &String| {
             println!("state: {state}");
-            state.len() < 20
+            state.len() == 20
         }))
             .await;
         println!("*** Finish ***");

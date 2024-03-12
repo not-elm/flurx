@@ -11,13 +11,13 @@ async fn main() {
         println!("*** Start ***");
         task.will(wait::until(|state| {
             println!("count: {state}");
-            state < 10
+            state == 5
         }))
             .await;
         println!("*** Finish ***");
     });
 
-    for _ in 0..10 {
+    for _ in 0..=5 {
         reducer.dispatch(|state| {
             state + 1
         }).await;
