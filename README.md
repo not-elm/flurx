@@ -4,6 +4,8 @@
 
 ## Examples
 
+All examples can be found [here](https://github.com/not-elm/flurx/tree/main/examples).
+
 <details>
 
 <summary>example reducer</summary>
@@ -17,9 +19,9 @@ async fn main() {
     reducer.schedule(|task| async move {
         println!("*** Start ***");
 
-        task.task(wait::until(|state| {
-            println!("count: {state}");
-            state < 10
+        task.will(wait::until(|state| {
+            println!("count: {}", state);
+            state == 10
         }))
             .await;
         println!("*** Finish ***");
@@ -49,19 +51,14 @@ async fn main() {
     let mut scheduler = Scheduler::<usize>::new();
     scheduler.schedule(|task| async move {
         println!("*** Start ***");
-        task.task(wait::until(|state| {
-            println!("count: {state}");
-            state < 10
-        })).await;
-
-        task.task(wait::while_(|state| {
-            println!("count: {state}");
-            state == 20
+        task.will(wait::until(|state| {
+            println!("count: {}", state);
+            state == 10
         })).await;
         println!("*** Finish ***");
     });
 
-    for i in 0..=20 {
+    for i in 0..=10 {
         scheduler.run(i).await;
     }
 }
@@ -69,6 +66,10 @@ async fn main() {
 
 </details>
 
-# License
+## ChangeLog
+
+Please see [here](https://github.com/not-elm/flurx/blob/main/CHANGELOG.md).
+
+## License
 
 This crate is licensed under the MIT License or the Apache License 2.0.
