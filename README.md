@@ -14,10 +14,10 @@ async fn main() {
     let mut store = Store::<usize>::default();
     let mut reducer = Reducer::<usize>::new(&mut store);
 
-    reducer.schedule(|tc| async move {
+    reducer.schedule(|task| async move {
         println!("*** Start ***");
 
-        tc.task(wait::until(|state| {
+        task.task(wait::until(|state| {
             println!("count: {state}");
             state < 10
         }))
@@ -47,14 +47,14 @@ In that case, you can separate it from state management and use only Reactor's f
 #[tokio::main]
 async fn main() {
     let mut scheduler = Scheduler::<usize>::new();
-    scheduler.schedule(|tc| async move {
+    scheduler.schedule(|task| async move {
         println!("*** Start ***");
-        tc.task(wait::until(|state| {
+        task.task(wait::until(|state| {
             println!("count: {state}");
             state < 10
         })).await;
 
-        tc.task(wait::while_(|state| {
+        task.task(wait::while_(|state| {
             println!("count: {state}");
             state == 20
         })).await;

@@ -3,7 +3,7 @@ use std::pin::Pin;
 
 use crate::scheduler::future::ReactorsFuture;
 use crate::scheduler::state_ptr::StatePtr;
-use crate::task::TaskCreator;
+use crate::task::ReactiveTask;
 
 mod future;
 mod state_ptr;
@@ -31,30 +31,30 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
             reactors: Vec::new(),
         }
     }
-    
-    pub fn pending_reactors_count(&self) -> usize{
+
+    pub fn pending_reactors_count(&self) -> usize {
         self.reactors.len()
     }
-    
-    pub fn not_exists_pending(&self) -> bool{
+
+    pub fn not_exists_pending(&self) -> bool {
         self.pending_reactors_count() == 0
     }
-    
-    
+
+
     /// Schedule the new [`Reactor`].
     ///
     /// The reality [`Reactor`] is [`Future`], it is polled once every time [`Scheduler::run`] is called.
-    /// 
+    ///
     /// ## Examples
     /// ```no_run
     /// use flurx::prelude::*;
-    /// 
+    ///
     /// #[tokio::main]
     /// async fn main(){
     ///     let mut scheduler = Scheduler::<usize>::new();
-    ///     scheduler.schedule(|tc|async move{
+    ///     scheduler.schedule(|task|async move{
     ///         // (1)
-    ///         tc.task(wait::until(|state: usize|{
+    ///         task.will(wait::until(|state: usize|{
     ///             state < 2
     ///         })).await;
     ///     });
@@ -66,10 +66,10 @@ impl<'a, 'b, State> Scheduler<'a, 'b, State>
     ///     scheduler.run(2).await;
     /// }
     /// ```
-    pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
+    pub fn schedule<F>(&mut self, f: impl FnOnce(ReactiveTask<'a, State>) -> F)
         where F: Future<Output=()> + 'b,
     {
-        self.reactors.push(Box::pin(f(TaskCreator {
+        self.reactors.push(Box::pin(f(ReactiveTask {
             state: self.state.state_ref()
         })));
     }
@@ -102,8 +102,8 @@ mod tests {
         let r = result.clone();
 
         scheduler.schedule(|task| async move {
-            task.task(wait::until(|state| {
-                state < 2
+            task.will(wait::until(|state| {
+                state == 2
             })).await;
             *r.lock().unwrap() = true;
         });
@@ -122,13 +122,9 @@ mod tests {
         let result = Arc::new(Mutex::new(false));
         let r = result.clone();
 
-        scheduler.schedule(|tc| async move {
-            tc.task(wait::while_(|state| {
-                state == 2
-            })).await;
-
-            tc.task(wait::until(|state| {
-                state < 3
+        scheduler.schedule(|task| async move {
+            task.will(wait::until(|state| {
+                3 <= state
             })).await;
 
             *r.lock().unwrap() = true;

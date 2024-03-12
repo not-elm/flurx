@@ -20,7 +20,7 @@ mod tests {
 
         let mut reducer = Reducer::<i32>::new(&mut store);
         reducer.schedule(|task| async move {
-            task.task(wait::while_(|state| {
+            task.will(wait::until(|state| {
                 state == 2
             }))
                 .await;

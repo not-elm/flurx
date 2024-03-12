@@ -1,33 +1,19 @@
-use flurx::reducer::Reducer;
-use flurx::selector::wait;
-use flurx::store::Store;
+use std::time::Duration;
+
+use flurx::prelude::delay;
+use flurx::Scheduler;
 
 #[tokio::main]
 async fn main() {
-    let mut store = Store::<usize>::default();
-    let mut reducer = Reducer::new(&mut store);
-    reducer.schedule(|tc| async move {
-        println!("Wait until count less than 10");
-        tc.task(wait::until(|state| {
-            println!("count: {state}");
-            state < 10
-        }))
-            .await;
+    let mut scheduler = Scheduler::default();
 
-        println!("Wait while count reaches 20");
-        tc.task(wait::while_(|state| {
-            println!("count: {state}");
-            state == 20
-        }))
-            .await;
-
-        println!("Finish");
+    scheduler.schedule(|task| async move {
+        println!("*** Delay 3 secs ***");
+        task.will(delay::time(Duration::from_secs(3))).await;
+        println!("*** Finish ***");
     });
 
-    for _ in 0..20 {
-        reducer.dispatch(|state| {
-            state + 1
-        })
-            .await;
-    }
+    scheduler.run(()).await;
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    scheduler.run(()).await;
 }

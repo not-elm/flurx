@@ -90,7 +90,7 @@ mod tests {
         let mut state = UnsafeCell::new(None);
         let mut future = TaskFuture::new_non_safety(unsafe {
             &*state.get()
-        }, wait::while_(|state| state == 1));
+        }, wait::until(|state| state == 1));
 
         *state.get_mut() = Some(0);
         assert!(block_on(poll_once(&mut future)).is_none());

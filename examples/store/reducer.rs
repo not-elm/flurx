@@ -9,7 +9,7 @@ async fn main() {
 
     reducer.schedule(|task| async move {
         println!("*** Start ***");
-        task.task(wait::until(|state| {
+        task.will(wait::until(|state| {
             println!("count: {state}");
             state < 10
         }))

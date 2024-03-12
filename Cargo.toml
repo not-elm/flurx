@@ -15,10 +15,6 @@ name = "once"
 path = "examples/selector/once.rs"
 
 [[example]]
-name = "time"
-path = "examples/selector/time.rs"
-
-[[example]]
 name = "until"
 path = "examples/selector/delay.rs"
 

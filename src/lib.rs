@@ -15,7 +15,7 @@ pub mod prelude {
         reducer::Reducer,
         scheduler::Scheduler,
         selector::*,
-        task::TaskCreator,
+        task::ReactiveTask,
     };
 }
 

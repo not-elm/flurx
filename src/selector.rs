@@ -5,9 +5,9 @@ pub mod delay;
 pub mod once;
 
 
-/// Selector defines what a task created by [`TaskCreator`] will do.
+/// Selector defines what a task created by [`ReactiveTask`] will do.
 ///
-/// [`TaskCreator`]: crate::prelude::TaskCreator
+/// [`ReactiveTask`]: crate::prelude::ReactiveTask
 pub trait Selector<State>{
     type Output;
 

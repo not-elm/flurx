@@ -55,7 +55,7 @@ mod tests {
         let mut scheduler = Scheduler::<&'static str>::default();
         let (tx, rx) = result_event();
         scheduler.schedule(|task| async move {
-            let output = task.task(repeat::count(2, |state: &'static str| {
+            let output = task.will(repeat::count(2, |state: &'static str| {
                 state.to_string()
             })).await;
             tx.set(output);

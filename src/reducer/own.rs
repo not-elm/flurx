@@ -2,7 +2,7 @@ use std::future::Future;
 use std::mem;
 
 use crate::dispatch::Dispatch;
-use crate::prelude::TaskCreator;
+use crate::prelude::ReactiveTask;
 use crate::reducer::base::ReducerInner;
 use crate::store::Store;
 
@@ -24,7 +24,7 @@ impl<'a, 'b, State> Reducer<'a, 'b, State>
         'a: 'b,
         State: 'a + 'b + Default
 {
-    pub fn schedule<F>(&mut self, f: impl FnOnce(TaskCreator<'a, State>) -> F)
+    pub fn schedule<F>(&mut self, f: impl FnOnce(ReactiveTask<'a, State>) -> F)
         where F: Future<Output=()> + 'b
     {
         self.0.scheduler.schedule(f);

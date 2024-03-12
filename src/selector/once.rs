@@ -34,8 +34,8 @@ mod tests {
     async fn once_run() {
         let mut scheduler = Scheduler::<&'static str>::default();
         let (tx, rx) = result_event();
-        scheduler.schedule(|tc| async move {
-            let output = tc.task(once::run(|state: &'static str| {
+        scheduler.schedule(|task| async move {
+            let output = task.will(once::run(|state: &'static str| {
                 state.to_string()
             })).await;
             tx.set(output);

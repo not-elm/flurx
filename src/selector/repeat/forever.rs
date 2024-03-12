@@ -41,9 +41,9 @@ mod tests {
         let mut scheduler = Scheduler::<ResultEvent<usize>>::default();
         let (tx, rx) = result_event::<usize>();
         let (tx2, rx2) = result_event::<bool>();
-        scheduler.schedule(|tc| async move {
+        scheduler.schedule(|task| async move {
             tokio::spawn(async move {
-                let result = tc.try_task(repeat::forever(|state: ResultEvent<usize>| {
+                let result = task.try_will(repeat::forever(|state: ResultEvent<usize>| {
                     state.set(state.get() + 1);
                 }))
                     .await;

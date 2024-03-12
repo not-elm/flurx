@@ -46,8 +46,8 @@ mod tests {
     async fn delay_300_ms() {
         let mut scheduler = Scheduler::<()>::default();
         let (tx, rx) = result_event();
-        scheduler.schedule(|tc| async move {
-            tc.task(delay::time(Duration::from_millis(300))).await;
+        scheduler.schedule(|task| async move {
+            task.will(delay::time(Duration::from_millis(300))).await;
             tx.set(true);
         });
         scheduler.run(()).await;

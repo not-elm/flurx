@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 
 use crate::selector::Selector;
 
-
 /// Create the task continues to run as long as the state meets the condition.
 pub fn until<F, State>(f: F) -> impl Selector<State>
     where
@@ -21,9 +20,9 @@ impl<F, State> Selector<State> for Until<F, State>
 
     fn select(&self, state: State) -> Option<Self::Output> {
         if self.0(state) {
-            None
-        } else {
             Some(())
+        } else {
+            None
         }
     }
 }
@@ -39,8 +38,8 @@ mod tests {
     async fn until_string_is_hello() {
         let mut scheduler = Scheduler::<&'static str>::default();
         let (tx, rx) = result_event();
-        scheduler.schedule(|tc| async move {
-            tc.task(wait::until(|state: &'static str| {
+        scheduler.schedule(|task| async move {
+            task.will(wait::until(|state: &'static str| {
                 state == "hello"
             })).await;
             tx.set(true);

@@ -54,13 +54,13 @@ mod tests {
         let mut scheduler = Scheduler::new();
         let (tx, rx) = result_event::<usize>();
         let tx2 = tx.clone();
-        scheduler.schedule(|tc| async move {
-            tc.task(once::run(|_| {
+        scheduler.schedule(|task| async move {
+            task.will(once::run(|_| {
                 tx.set(tx.get() + 1);
             })).await;
         });
-        scheduler.schedule(|tc| async move {
-            tc.task(once::run(|_| {
+        scheduler.schedule(|task| async move {
+            task.will(once::run(|_| {
                 tx2.set(tx2.get() + 1);
             })).await;
         });

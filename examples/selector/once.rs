@@ -5,8 +5,8 @@ use flurx::Scheduler;
 async fn main() {
     let mut scheduler = Scheduler::<&'static str>::new();
 
-    scheduler.schedule(|tc| async move {
-        tc.task(once::run(|state|{
+    scheduler.schedule(|task| async move {
+        task.will(once::run(|state|{
             println!("{state}");
         })).await;
     });
