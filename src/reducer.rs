@@ -8,6 +8,7 @@ mod r#ref;
 #[cfg(test)]
 mod tests {
     use crate::reducer::Reducer;
+    use crate::Scheduler;
     use crate::selector::wait;
     use crate::store::Store;
     use crate::tests::result_event;
@@ -17,16 +18,15 @@ mod tests {
         let mut store = Store::<i32>::default();
 
         let (r1, r2) = result_event::<bool>();
-
-        let mut reducer = Reducer::<i32>::new(&mut store);
-        reducer.schedule(|task| async move {
+        let mut scheduler = Scheduler::new();
+        scheduler.schedule(|task| async move {
             task.will(wait::until(|state| {
                 state == 2
             }))
                 .await;
             r1.set(true);
         });
-
+        let mut reducer = Reducer::<i32>::new(&mut store, scheduler);
         reducer.dispatch(|state| {
             state + 1
         }).await;

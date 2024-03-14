@@ -1,3 +1,4 @@
+use std::future::Future;
 use crate::error::FutureResult;
 use crate::selector::Selector;
 use crate::task::future::TaskFuture;
@@ -38,15 +39,14 @@ impl<'state, State> ReactiveTask<'state, State> {
     /// });
     /// ```
     #[inline]
-    pub async fn will<Out, Sel>(&self, selector: Sel) -> Out
-        where Sel: Selector<State, Output=Out>,
+    pub fn will<Out, Sel>(&self, selector: Sel) -> impl Future<Output=Out> + 'state
+        where Sel: Selector<State, Output=Out> + 'state,
               State: Clone + 'state
     {
         TaskFuture::<State, Sel, false> {
             state: self.state,
             selector,
         }
-            .await
     }
     
     /// This method will not be made public as the specifications have not yet been finalized.
