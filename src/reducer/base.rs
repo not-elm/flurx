@@ -13,10 +13,10 @@ impl<'state, 'future, State, ScheduleState> ReducerInner<'state, 'future, State,
         State: 'state + 'future,
         ScheduleState: Clone + 'state + 'future
 {
-    pub fn new(store: &'state mut Store<State>) -> ReducerInner<'state, 'future, State, ScheduleState> {
+    pub fn new(store: &'state mut Store<State>, scheduler: Scheduler<'state, 'future, ScheduleState>) -> ReducerInner<'state, 'future, State, ScheduleState> {
         Self {
             store,
-            scheduler: Scheduler::new(),
+            scheduler,
         }
     }
 }
