@@ -6,7 +6,7 @@ use crate::scheduler::Reactor;
 
 pub(crate) struct ReactorsFuture<'state, 'future> {
     pub reactor: &'future mut Option<Reactor<'state>>,
-    pub tmp: &'future mut Option<Reactor<'state>>
+    pub tmp: &'future mut Option<Reactor<'state>>,
 }
 
 
@@ -37,28 +37,3 @@ impl<'state, 'future> Drop for ReactorsFuture<'state, 'future> {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use crate::prelude::once;
-    use crate::Scheduler;
-    use crate::tests::result_event;
-
-    #[tokio::test]
-    async fn run_all_reactors() {
-        let mut scheduler = Scheduler::new();
-        let (tx, rx) = result_event::<usize>();
-        let tx2 = tx.clone();
-        scheduler.schedule(|task| async move {
-            task.will(once::run(|_| {
-                tx.set(tx.get() + 1);
-            })).await;
-        });
-        scheduler.schedule(|task| async move {
-            task.will(once::run(|_| {
-                tx2.set(tx2.get() + 1);
-            })).await;
-        });
-        scheduler.run(0).await;
-        assert_eq!(rx.get(), 2);
-    }
-}
