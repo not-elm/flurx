@@ -11,12 +11,21 @@ mod state_ptr;
 pub(crate) type Reactor<'state> = Pin<Box<dyn Future<Output=()> + 'state>>;
 
 
-#[derive(Default)]
 pub struct Scheduler<'state, 'future, State> {
     state: StatePtr<'state, State>,
-    reactors: Vec<Reactor<'future>>,
+    reactor: Option<Reactor<'future>>,
+    tmp: Option<Reactor<'future>>,
 }
 
+impl<'state, 'future, State> Default for Scheduler<'state, 'future, State> 
+    where
+    'state: 'future,
+    State: Clone + 'state + 'future
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl<'state, 'future, State> Scheduler<'state, 'future, State>
     where
@@ -29,28 +38,22 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     pub const fn new() -> Scheduler<'state, 'future, State> {
         Self {
             state: StatePtr::uninit(),
-            reactors: Vec::new(),
+            reactor: None,
+            tmp: None,
         }
     }
 
     #[must_use]
     #[inline]
-    pub fn pending_reactors_count(&self) -> usize {
-        self.reactors.len()
+    pub const fn not_exists_pending_reactors(&self) -> bool {
+        self.reactor.is_none()
     }
 
     #[must_use]
     #[inline]
-    pub fn not_exists_pending_reactors(&self) -> bool {
-        self.pending_reactors_count() == 0
+    pub const fn exists_pending_reactors(&self) -> bool {
+        self.reactor.is_some()
     }
-
-    #[must_use]
-    #[inline]
-    pub fn exists_pending_reactors(&self) -> bool {
-        0 < self.pending_reactors_count()
-    }
-
 
     /// Schedule the new [`Reactor`].
     ///
@@ -83,7 +86,7 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
             F: FnOnce(ReactiveTask<'state, State>) -> Fut,
             Fut: Future<Output=()> + 'future,
     {
-        self.reactors.push(Box::pin(f(ReactiveTask {
+        self.reactor.replace(Box::pin(f(ReactiveTask {
             state: self.state.state_ref()
         })));
     }
@@ -93,10 +96,9 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
 
-        let len = self.reactors.len();
         ReactorsFuture {
-            reactors: &mut self.reactors,
-            polled: Vec::with_capacity(len),
+            reactor: &mut self.reactor,
+            tmp: &mut self.tmp,
         }
             .await;
     }

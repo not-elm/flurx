@@ -5,8 +5,8 @@ use core::task::{Context, Poll};
 use crate::scheduler::Reactor;
 
 pub(crate) struct ReactorsFuture<'state, 'future> {
-    pub reactors: &'future mut Vec<Reactor<'state>>,
-    pub polled: Vec<Reactor<'state>>,
+    pub reactor: &'future mut Option<Reactor<'state>>,
+    pub tmp: &'future mut Option<Reactor<'state>>
 }
 
 
@@ -16,29 +16,23 @@ impl<'state, 'future> Future for ReactorsFuture<'state, 'future>
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.reactors.is_empty() {
-            return Poll::Ready(());
-        }
-
-        while let Some(mut reactor) = self.reactors.pop() {
+        if let Some(mut reactor) = self.reactor.take() {
             if reactor.as_mut().poll(cx).is_pending() {
-                self.polled.push(reactor);
+                self.tmp.replace(reactor);
+                Poll::Pending
+            } else {
+                Poll::Ready(())
             }
-        }
-        if self.polled.is_empty() {
-            Poll::Ready(())
         } else {
-            Poll::Pending
+            Poll::Ready(())
         }
     }
 }
 
-
 impl<'state, 'future> Drop for ReactorsFuture<'state, 'future> {
+    #[inline(always)]
     fn drop(&mut self) {
-        while let Some(f) = self.polled.pop() {
-            self.reactors.push(f);
-        }
+        std::mem::swap(self.reactor, self.tmp);
     }
 }
 

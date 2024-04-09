@@ -10,6 +10,7 @@ impl<'state, State> StatePtr<'state, State> {
         StatePtr(Vec::new(), PhantomData)
     }
 
+    #[inline]
     pub fn set(&mut self, state: State) {
         if let Some(now) = self.0.get_mut(0) {
             *now = Some(state);
