@@ -19,6 +19,7 @@ impl<'state, State, Sel> Future for TaskFuture<'state, State, Sel, true>
 {
     type Output = FutureResult<Sel::Output>;
 
+    #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.try_poll(cx) {
             Err(e) => Poll::Ready(Err(e)),
@@ -36,6 +37,7 @@ impl<'state, State, Sel> Future for TaskFuture<'state, State, Sel, false>
     type Output = Sel::Output;
 
     #[allow(clippy::panic)]
+    #[inline(always)]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.try_poll(cx) {
             Err(e) => {

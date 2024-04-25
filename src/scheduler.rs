@@ -13,8 +13,7 @@ pub(crate) type Reactor<'state> = Pin<Box<dyn Future<Output=()> + 'state>>;
 
 pub struct Scheduler<'state, 'future, State> {
     state: StatePtr<'state, State>,
-    reactor: Option<Reactor<'future>>,
-    tmp: Option<Reactor<'future>>,
+    reactor: Option<Reactor<'future>>
 }
 
 impl<'state, 'future, State> Default for Scheduler<'state, 'future, State> 
@@ -33,25 +32,24 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
         State: Clone + 'state + 'future
 {
     #[must_use]
-    #[inline]
+    #[inline(always)]
     /// Creates the empty scheduler.
     pub const fn new() -> Scheduler<'state, 'future, State> {
         Self {
             state: StatePtr::uninit(),
-            reactor: None,
-            tmp: None,
+            reactor: None
         }
     }
 
     #[must_use]
-    #[inline]
-    pub const fn not_exists_pending_reactors(&self) -> bool {
+    #[inline(always)]
+    pub const fn not_exists_reactor(&self) -> bool {
         self.reactor.is_none()
     }
 
     #[must_use]
-    #[inline]
-    pub const fn exists_pending_reactors(&self) -> bool {
+    #[inline(always)]
+    pub const fn exists_reactor(&self) -> bool {
         self.reactor.is_some()
     }
 
@@ -80,7 +78,7 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     ///     scheduler.run(2).await;
     /// }
     /// ```
-    #[inline]
+   #[inline(always)]
     pub fn schedule<F, Fut>(&mut self, f: F)
         where
             F: FnOnce(ReactiveTask<'state, State>) -> Fut,
@@ -92,17 +90,15 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     }
 
     /// Poll all registered `Reactors` once each.
-    #[inline]
+    #[inline(always)]
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
 
         ReactorsFuture {
-            reactor: &mut self.reactor,
-            tmp: &mut self.tmp,
+            reactor: &mut self.reactor
         }
             .await;
     }
-
 
     /// Synchronously poll all registered `Reactors` once each.
     #[inline]
