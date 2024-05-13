@@ -23,3 +23,5 @@ flurx = { path = ".", features = ["sync"]}
 [features]
 default = []
 sync = ["dep:async-compat", "dep:pollster"]
+default-selectors = []
+reducer = []

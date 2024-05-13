@@ -1,14 +1,17 @@
-
+#[cfg(feature = "default-selectors")]
 pub mod repeat;
+#[cfg(feature = "default-selectors")]
 pub mod wait;
+#[cfg(feature = "default-selectors")]
 pub mod delay;
+#[cfg(feature = "default-selectors")]
 pub mod once;
 
 
 /// Selector defines what a task created by [`ReactiveTask`] will do.
 ///
 /// [`ReactiveTask`]: crate::prelude::ReactiveTask
-pub trait Selector<State>{
+pub trait Selector<State> {
     type Output;
 
     /// The Option value in the output indicates that Future is still pending if Some, or that the task is ready if Some.

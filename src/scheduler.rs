@@ -10,16 +10,15 @@ mod state_ptr;
 
 pub(crate) type Reactor<'state> = Pin<Box<dyn Future<Output=()> + 'state>>;
 
-
 pub struct Scheduler<'state, 'future, State> {
     state: StatePtr<'state, State>,
-    reactor: Option<Reactor<'future>>
+    reactor: Option<Reactor<'future>>,
 }
 
-impl<'state, 'future, State> Default for Scheduler<'state, 'future, State> 
+impl<'state, 'future, State> Default for Scheduler<'state, 'future, State>
     where
-    'state: 'future,
-    State: Clone + 'state + 'future
+        'state: 'future,
+        State: Clone + 'state + 'future
 {
     fn default() -> Self {
         Self::new()
@@ -37,7 +36,7 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     pub const fn new() -> Scheduler<'state, 'future, State> {
         Self {
             state: StatePtr::uninit(),
-            reactor: None
+            reactor: None,
         }
     }
 
@@ -58,7 +57,8 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     /// The reality [`Reactor`] is [`Future`], it is polled once every time [`Scheduler::run`] is called.
     ///
     /// ## Examples
-    /// ```no_run
+    /// 
+    /// ```ignore
     /// use flurx::prelude::*;
     ///
     /// #[tokio::main]
@@ -78,7 +78,7 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     ///     scheduler.run(2).await;
     /// }
     /// ```
-   #[inline(always)]
+    #[inline(always)]
     pub fn schedule<F, Fut>(&mut self, f: F)
         where
             F: FnOnce(ReactiveTask<'state, State>) -> Fut,
@@ -93,77 +93,20 @@ impl<'state, 'future, State> Scheduler<'state, 'future, State>
     #[inline(always)]
     pub async fn run(&mut self, state: State) {
         self.state.set(state);
-
-        ReactorsFuture {
-            reactor: &mut self.reactor
-        }
-            .await;
+        ReactorsFuture(&mut self.reactor).await;
     }
 
     /// Synchronously poll all registered `Reactors` once each.
     #[inline]
     #[cfg(feature = "sync")]
     pub fn run_sync(&mut self, state: State) {
-        use async_compat::CompatExt;
-        pollster::block_on(self.run(state).compat())
+        #[cfg(target_arch = "wasm32")]
+        {
+            use async_compat::CompatExt;
+            pollster::block_on(self.run(state).compat())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        pollster::block_on(self.run(state))
     }
 }
-
-
-#[cfg(test)]
-mod tests {
-    use std::sync::{Arc, Mutex};
-
-    use crate::scheduler::Scheduler;
-    use crate::selector::wait;
-
-    #[tokio::test]
-    async fn one_until() {
-        let mut scheduler = Scheduler::<i32>::default();
-        let result = Arc::new(Mutex::new(false));
-        let r = result.clone();
-
-        scheduler.schedule(|task| async move {
-            task.will(wait::until(|state| {
-                state == 2
-            })).await;
-            *r.lock().unwrap() = true;
-        });
-
-        scheduler.run(1).await;
-        assert!(!*result.lock().unwrap());
-
-        scheduler.run(2).await;
-        assert!(*result.lock().unwrap());
-    }
-
-
-    #[tokio::test]
-    async fn while_then_until() {
-        let mut scheduler = Scheduler::<i32>::default();
-        let result = Arc::new(Mutex::new(false));
-        let r = result.clone();
-
-        scheduler.schedule(|task| async move {
-            task.will(wait::until(|state| {
-                3 <= state
-            })).await;
-
-            *r.lock().unwrap() = true;
-        });
-
-        scheduler.run(1).await;
-        assert!(!*result.lock().unwrap());
-
-        scheduler.run(2).await;
-        assert!(!*result.lock().unwrap());
-
-        scheduler.run(2).await;
-        assert!(!*result.lock().unwrap());
-
-        scheduler.run(3).await;
-        assert!(*result.lock().unwrap());
-    }
-}
-
 

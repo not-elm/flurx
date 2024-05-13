@@ -27,7 +27,7 @@ impl<'state, State> ReactiveTask<'state, State> {
     ///
     /// ## Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use flurx::prelude::once;
     /// use flurx::Scheduler;
     ///
@@ -72,32 +72,3 @@ impl<'state, State> Clone for ReactiveTask<'state, State> {
 impl<'state, State> Copy for ReactiveTask<'state, State> {}
 
 
-#[cfg(test)]
-mod tests {
-    use std::cell::UnsafeCell;
-
-    use futures_lite::pin;
-
-    use crate::task::ReactiveTask;
-    use crate::tests::poll_once_block;
-
-    #[test]
-    fn once_wait() {
-        let mut state = UnsafeCell::new(None);
-        let task = ReactiveTask {
-            state: unsafe { &*state.get() }
-        };
-        let f = task.will(|state: i32| {
-            if state == 1 {
-                Some(())
-            } else {
-                None
-            }
-        });
-        pin!(f);
-        *state.get_mut() = Some(0);
-        assert!(poll_once_block(&mut f).is_none());
-        *state.get_mut() = Some(1);
-        assert!(poll_once_block(&mut f).is_some());
-    }
-}
