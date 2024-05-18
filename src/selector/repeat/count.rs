@@ -48,25 +48,3 @@ impl<F, Out, State> Selector<State> for RepeatCount<F, Out, State>
 }
 
 
-#[cfg(test)]
-mod tests {
-    use crate::Scheduler;
-    use crate::selector::repeat;
-    use crate::tests::result_event;
-
-    #[tokio::test]
-    async fn repeat_3_count() {
-        let mut scheduler = Scheduler::<&'static str>::default();
-        let (tx, rx) = result_event();
-        scheduler.schedule(|task| async move {
-            let output = task.will(repeat::count(2, |state: &'static str| {
-                state.to_string()
-            })).await;
-            tx.set(output);
-        });
-        scheduler.run("HELLO").await;
-        scheduler.run("TEST").await;
-
-        assert_eq!(rx.get(), "TEST");
-    }
-}

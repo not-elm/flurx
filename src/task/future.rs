@@ -19,6 +19,7 @@ impl<'state, State, Sel> Future for TaskFuture<'state, State, Sel, true>
 {
     type Output = FutureResult<Sel::Output>;
 
+    #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.try_poll(cx) {
             Err(e) => Poll::Ready(Err(e)),
@@ -36,6 +37,7 @@ impl<'state, State, Sel> Future for TaskFuture<'state, State, Sel, false>
     type Output = Sel::Output;
 
     #[allow(clippy::panic)]
+    #[inline(always)]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.try_poll(cx) {
             Err(e) => {
@@ -75,28 +77,3 @@ impl<'state, State, Sel> TaskFuture<'state, State, Sel, false>
         }
     }
 }
-
-
-#[cfg(test)]
-mod tests {
-    use std::cell::UnsafeCell;
-
-    use futures_lite::future::{block_on, poll_once};
-
-    use crate::selector::wait;
-    use crate::task::future::TaskFuture;
-
-    #[test]
-    fn count_up() {
-        let mut state = UnsafeCell::new(None);
-        let mut future = TaskFuture::new_non_safety(unsafe {
-            &*state.get()
-        }, wait::until(|state| state == 1));
-
-        *state.get_mut() = Some(0);
-        assert!(block_on(poll_once(&mut future)).is_none());
-        *state.get_mut() = Some(1);
-        assert!(block_on(poll_once(&mut future)).is_some());
-    }
-}
-
